@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CL Relaxamente · DRE</title>
+<style>
+:root {
+  --bg: #f5f0eb;
+  --surface: #ffffff;
+  --border: #e2d9d0;
+  --accent: #8b5e3c;
+  --accent-light: #f0e6dc;
+  --accent2: #c49a6c;
+  --green: #2d7a4f;
+  --green-bg: #eaf4ee;
+  --red: #b83232;
+  --red-bg: #fceaea;
+  --text: #2c1f14;
+  --text2: #7a6555;
+  --muted: #b09a88;
+  --shadow: 0 2px 12px rgba(139,94,60,0.10);
+  --radius: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; }
+
+/* NAV */
+nav {
+  background: var(--accent);
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.nav-btn {
+  flex: 1; max-width: 100px;
+  padding: 12px 4px 10px;
+  background: none; border: none; cursor: pointer;
+  color: rgba(255,255,255,.65);
+  font-size: 11px; font-weight: 600;
+  text-align: center; line-height: 1.3;
+  border-bottom: 3px solid transparent;
+  transition: all .15s;
+}
+.nav-btn .ico { font-size: 20px; display: block; margin-bottom: 2px; }
+.nav-btn.active { color: #fff; border-bottom-color: var(--accent2); }
+.nav-btn:hover { color: #fff; }
+
+/* HEADER */
+.page-header {
+  background: var(--accent);
+  color: white;
+  padding: 20px 16px 16px;
+  text-align: center;
+}
+.page-header h1 { font-size: 22px; font-weight: 700; letter-spacing: .3px; }
+.page-header p { font-size: 13px; opacity: .75; margin-top: 3px; }
+
+/* PAGES */
+.page { display: none; padding: 16px; max-width: 640px; margin: 0 auto; }
+.page.active { display: block; }
+
+/* CARDS */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.card-title {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--text2); margin-bottom: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+/* KPI GRID */
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.kpi {
+  background: var(--surface); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 16px;
+  border-top: 4px solid var(--border);
+}
+.kpi.kpi-green { border-top-color: var(--green); }
+.kpi.kpi-red { border-top-color: var(--red); }
+.kpi.kpi-accent { border-top-color: var(--accent); }
+.kpi.kpi-gold { border-top-color: var(--accent2); }
+.kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 6px; }
+.kpi-value { font-size: 20px; font-weight: 700; color: var(--text); }
+.kpi-value.green { color: var(--green); }
+.kpi-value.red { color: var(--red); }
+.kpi-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* YEAR TABS */
+.year-bar { display: flex; gap: 6px; margin-bottom: 14px; }
+.year-btn {
+  padding: 6px 18px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 600;
+  background: var(--surface); color: var(--text2); border: 1.5px solid var(--border);
+  transition: all .15s;
+}
+.year-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+/* MONTH LIST */
+.month-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .1s;
+}
+.month-item:last-child { border-bottom: none; }
+.month-item:hover { background: var(--accent-light); margin: 0 -18px; padding: 12px 18px; border-radius: 8px; }
+.month-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.month-name { flex: 1; font-weight: 600; font-size: 14px; }
+.month-vals { text-align: right; }
+.month-sobra { font-weight: 700; font-size: 14px; }
+.month-sub { font-size: 11px; color: var(--muted); }
+.month-arrow { color: var(--muted); font-size: 16px; }
+
+/* BAR */
+.mini-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+.mini-bar-fill { height: 100%; border-radius: 3px; }
+
+/* DETAIL VIEW */
+.detail-back { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; cursor: pointer; color: var(--accent); font-weight: 600; font-size: 14px; }
+.section-head {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: white;
+  padding: 8px 14px; border-radius: 8px; margin-bottom: 8px;
+  display: flex; justify-content: space-between;
+}
+.section-head.green { background: var(--green); }
+.section-head.red { background: var(--red); }
+.entry-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.entry-row:last-child { border-bottom: none; }
+.entry-det { color: var(--text2); flex: 1; }
+.entry-date { font-size: 11px; color: var(--muted); margin-right: 10px; min-width: 42px; }
+.entry-val { font-weight: 700; }
+.entry-val.pos { color: var(--green); }
+.entry-val.neg { color: var(--red); }
+.delete-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 14px; padding: 0 4px; margin-left: 6px;
+}
+.delete-btn:hover { color: var(--red); }
+
+/* FORM */
+.form-group { margin-bottom: 12px; }
+label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; }
+input, select, textarea {
+  width: 100%; padding: 11px 12px; border-radius: 9px;
+  border: 1.5px solid var(--border); background: var(--bg);
+  color: var(--text); font-size: 14px; font-family: inherit;
+  outline: none; transition: border .15s;
+}
+input:focus, select:focus { border-color: var(--accent); }
+.btn-row { display: flex; gap: 10px; margin-top: 4px; }
+.btn {
+  flex: 1; padding: 13px; border: none; border-radius: 10px;
+  font-size: 15px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.btn-green { background: var(--green); color: white; }
+.btn-green:hover { filter: brightness(1.1); }
+.btn-red { background: var(--red); color: white; }
+.btn-red:hover { filter: brightness(1.1); }
+.btn-accent { background: var(--accent); color: white; }
+.btn-accent:hover { filter: brightness(1.1); }
+.btn-outline { background: white; color: var(--text2); border: 1.5px solid var(--border); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+.tag-green { background: var(--green-bg); color: var(--green); }
+.tag-red { background: var(--red-bg); color: var(--red); }
+
+/* CHART */
+.bar-chart { display: flex; align-items: flex-end; gap: 5px; height: 140px; padding-bottom: 24px; position: relative; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+.bar-seg { width: 100%; border-radius: 4px 4px 0 0; transition: height .4s; }
+.bar-label { font-size: 9px; color: var(--muted); margin-top: 4px; position: absolute; bottom: 0; }
+.chart-legend { display: flex; gap: 14px; justify-content: center; margin-top: 8px; }
+.leg { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
+.leg-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+/* ANIVERSÁRIOS */
+.client-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+}
+.client-card:last-child { border-bottom: none; }
+.client-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--accent-light); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700; flex-shrink: 0;
+}
+.client-info { flex: 1; }
+.client-name { font-weight: 600; font-size: 14px; }
+.client-meta { font-size: 12px; color: var(--muted); }
+.client-aniv { font-size: 13px; font-weight: 700; color: var(--accent); }
+.near-badge { background: var(--accent); color: white; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; margin-left: 6px; }
+
+/* CUSTO */
+.custo-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.custo-row:last-child { border-bottom: none; }
+.custo-label { font-size: 13px; flex: 1; }
+.custo-sub { font-size: 11px; color: var(--muted); }
+.custo-val { font-weight: 700; font-size: 14px; color: var(--text2); }
+.total-box { background: var(--accent-light); border-radius: 10px; padding: 16px; text-align: center; }
+.total-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+.total-val { font-size: 28px; font-weight: 700; color: var(--accent); }
+.lucro-box { background: var(--green-bg); border-radius: 10px; padding: 16px; text-align: center; }
+.lucro-val { font-size: 28px; font-weight: 700; color: var(--green); }
+input[type=number].inline { width: 70px; padding: 5px 7px; font-size: 13px; text-align: right; }
+
+/* EMPTY */
+.empty { text-align: center; padding: 30px 0; color: var(--muted); font-size: 14px; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 20px 20px 0 0; padding: 24px 20px 36px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; }
+.modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--muted); }
+
+/* NOTIF */
+.notif {
+  position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+  background: var(--accent); color: white; padding: 10px 20px;
+  border-radius: 20px; font-size: 14px; font-weight: 600;
+  z-index: 300; display: none; white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,.2);
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>💆 CL Relaxamente</h1>
+  <p>Controle Financeiro</p>
+</div>
+
+<nav>
+  <button class="nav-btn active" onclick="goPage('inicio')"><span class="ico">🏠</span>Início</button>
+  <button class="nav-btn" onclick="goPage('lancamentos')"><span class="ico">✏️</span>Lançar</button>
+  <button class="nav-btn" onclick="goPage('grafico')"><span class="ico">📊</span>Gráfico</button>
+  <button class="nav-btn" onclick="goPage('aniversarios')"><span class="ico">🎂</span>Anivs.</button>
+  <button class="nav-btn" onclick="goPage('custo')"><span class="ico">🧴</span>Custo</button>
+</nav>
+
+<!-- NOTIF -->
+<div class="notif" id="notif"></div>
+
+<!-- ═══════════ INÍCIO ═══════════ -->
+<div class="page active" id="page-inicio">
+
+  <div class="year-bar" id="year-bar"></div>
+
+  <div class="kpi-grid" id="kpis"></div>
+
+  <!-- DETALHE do mês selecionado (hidden by default) -->
+  <div id="detail-view" style="display:none">
+    <div class="detail-back" onclick="closeDetail()">← Voltar</div>
+    <div id="detail-content"></div>
+  </div>
+
+  <!-- LISTA DE MESES -->
+  <div id="month-list-wrap">
+    <div class="card">
+      <div class="card-title">Meses <span id="year-label"></span></div>
+      <div id="month-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════ LANÇAR ═══════════ -->
+<div class="page" id="page-lancamentos">
+  <div class="card">
+    <div class="card-title">Novo Lançamento</div>
+
+    <div class="form-group">
+      <label>Tipo</label>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-green" id="tipo-rec" onclick="setTipo('rec')" style="flex:1;padding:11px">💰 Receita</button>
+        <button class="btn btn-outline" id="tipo-desp" onclick="setTipo('desp')" style="flex:1;padding:11px">💸 Despesa</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Mês / Ano</label>
+      <div style="display:flex;gap:8px">
+        <select id="f-mes" style="flex:2">
+          <option value="Jan">Janeiro</option><option value="Fev">Fevereiro</option>
+          <option value="Mar">Março</option><option value="Abr">Abril</option>
+          <option value="Mai">Maio</option><option value="Jun">Junho</option>
+          <option value="Jul">Julho</option><option value="Ago">Agosto</option>
+          <option value="Set">Setembro</option><option value="Out">Outubro</option>
+          <option value="Nov">Novembro</option><option value="Dez">Dezembro</option>
+        </select>
+        <select id="f-ano" style="flex:1">
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Data</label>
+      <input type="date" id="f-data">
+    </div>
+
+    <div class="form-group">
+      <label>Valor (R$)</label>
+      <input type="number" id="f-valor" step="0.01" placeholder="0,00" min="0">
+    </div>
+
+    <div class="form-group">
+      <label>Detalhe / Cliente</label>
+      <input type="text" id="f-detalhe" placeholder="Ex: PACOTE FULANA, GASOLINA...">
+    </div>
+
+    <button class="btn btn-accent" onclick="salvarLancamento()" style="width:100%;margin-top:4px">Salvar Lançamento</button>
+  </div>
+
+  <div class="card" id="card-recentes">
+    <div class="card-title">Últimos lançamentos manuais</div>
+    <div id="recentes-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════ GRÁFICO ═══════════ -->
+<div class="page" id="page-grafico">
+  <div class="card">
+    <div class="card-title">Receita vs Despesa <span id="grafico-year-sel"></span></div>
+    <div class="bar-chart" id="bar-chart"></div>
+    <div class="chart-legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--green)"></div> Receita</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--red)"></div> Despesa</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--accent2)"></div> Sobra</div>
+    </div>
+  </div>
+  <div class="card" id="grafico-table"></div>
+</div>
+
+<!-- ═══════════ ANIVERSÁRIOS ═══════════ -->
+<div class="page" id="page-aniversarios">
+  <div class="card" id="prox-aniv-card" style="background:var(--accent);color:white;display:none">
+    <div style="font-size:12px;opacity:.8;margin-bottom:4px">🎂 PRÓXIMO ANIVERSÁRIO</div>
+    <div style="font-size:18px;font-weight:700" id="prox-aniv-nome"></div>
+    <div style="font-size:14px;opacity:.85;margin-top:2px" id="prox-aniv-data"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Clientes <span style="background:var(--accent-light);color:var(--accent);padding:2px 8px;border-radius:10px;font-size:12px" id="total-clientes"></span></div>
+    <div id="clientes-list"></div>
+  </div>
+
+  <button class="btn btn-accent" onclick="openModal('modal-aniv')" style="width:100%;margin-bottom:14px">+ Cadastrar Aniversário</button>
+</div>
+
+<!-- ═══════════ CUSTO ═══════════ -->
+<div class="page" id="page-custo">
+  <div class="card">
+    <div class="card-title">Calculadora · Custo por Sessão</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Edite as quantidades usadas por sessão. O custo é calculado automaticamente.</p>
+
+    <div id="custo-itens"></div>
+    <div style="margin-top:10px">
+      <button class="btn btn-outline" onclick="addItemCusto()" style="width:100%;padding:10px;font-size:13px">+ Adicionar item</button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+    <div class="total-box">
+      <div class="total-label">Custo por Sessão</div>
+      <div class="total-val" id="custo-total">R$ 0</div>
+    </div>
+    <div>
+      <div class="form-group" style="margin-bottom:8px">
+        <label style="font-size:11px">Ticket da sessão (R$)</label>
+        <input type="number" id="ticket-sessao" value="320" oninput="calcCusto()" style="padding:8px 10px;font-size:14px">
+      </div>
+      <div class="lucro-box">
+        <div class="total-label" style="color:var(--green)">Lucro por sessão</div>
+        <div class="lucro-val" id="lucro-sessao">R$ 0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Custos Fixos Mensais</div>
+    <div id="fixos-list"></div>
+    <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border)">
+      <span style="font-weight:700">Total fixos/mês</span>
+      <span style="font-weight:700;font-size:18px;color:var(--red)" id="fixos-total"></span>
+    </div>
+    <div style="margin-top:6px;font-size:12px;color:var(--muted)" id="fixos-por-sessao"></div>
+  </div>
+</div>
+
+<!-- ═══════════ MODALS ═══════════ -->
+<div class="modal-overlay" id="modal-aniv" onclick="closeModalOutside(event,'modal-aniv')">
+  <div class="modal">
+    <div class="modal-title">🎂 Cadastrar Aniversário <button class="modal-close" onclick="closeModal('modal-aniv')">×</button></div>
+    <div class="form-group"><label>Nome</label><input type="text" id="aniv-nome" placeholder="Nome do cliente"></div>
+    <div class="form-group"><label>Data de Aniversário</label><input type="date" id="aniv-data"></div>
+    <div class="form-group"><label>Cidade</label><input type="text" id="aniv-cidade" placeholder="Ex: Valinhos"></div>
+    <div class="form-group"><label>Condomínio / Bairro</label><input type="text" id="aniv-condo" placeholder="Opcional"></div>
+    <button class="btn btn-accent" onclick="salvarAniversario()" style="width:100%;margin-top:6px">Salvar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-item-custo" onclick="closeModalOutside(event,'modal-item-custo')">
+  <div class="modal">
+    <div class="modal-title">🧴 Novo Item de Custo <button class="modal-close" onclick="closeModal('modal-item-custo')">×</button></div>
+    <div class="form-group"><label>Nome do item</label><input type="text" id="ci-nome" placeholder="Ex: Óleo de massagem"></div>
+    <div class="form-group"><label>Preço da embalagem (R$)</label><input type="number" id="ci-preco" step="0.01" placeholder="0,00"></div>
+    <div class="form-group"><label>Rendimento (sessões por embalagem)</label><input type="number" id="ci-rend" placeholder="Ex: 10"></div>
+    <button class="btn btn-accent" onclick="salvarItemCusto()" style="width:100%;margin-top:6px">Salvar</button>
+  </div>
+</div>
+
+<!-- ═══════════ SCRIPT ═══════════ -->
+<script>
+// ── DADOS BASE (planilha atualizada) ──
+const MESES_FULL = {Jan:'Janeiro',Fev:'Fevereiro',Mar:'Março',Abr:'Abril',Mai:'Maio',Jun:'Junho',Jul:'Julho',Ago:'Agosto',Set:'Setembro',Out:'Outubro',Nov:'Novembro',Dez:'Dezembro'};
+const MESES = Object.keys(MESES_FULL);
+
+const BASE = {
+  2026: {
+    Jan:{rec:15320,desp:-5008.66,atend:15,
+      entradas:[
+        {d:'05/01',v:800,det:'RICCI'},{d:'14/01',v:1120,det:'MIRELLA'},
+        {d:'14/01',v:320,det:'SESSÃO ANA CAROL'},{d:'12/01',v:320,det:'SESSÃO SIMONE'},
+        {d:'12/01',v:320,det:'SESSÃO TATIANE'},{d:'08/01',v:320,det:'METADE SESSÃO JAQUELINE'},
+        {d:'14/01',v:320,det:'SESSÃO CARLOS'},{d:'15/01',v:1600,det:'RACHEL'},
+        {d:'16/01',v:320,det:'SESSÃO JULIANA'},{d:'20/01',v:1520,det:'PACOTE RAFAELA'},
+        {d:'20/01',v:1560,det:'PACOTE CAROLINA'},{d:'20/01',v:320,det:'SESSÃO GIOVANNA'},
+        {d:'21/01',v:320,det:'SESSÃO TATIANA'},{d:'21/01',v:320,det:'SESSÃO HIGOR'},
+        {d:'22/01',v:320,det:'SESSÃO RENATA'},{d:'23/01',v:1160,det:'SESSÃO LUCIANA'},
+        {d:'27/01',v:1160,det:'PACOTE TATHI'},{d:'27/01',v:800,det:'PACOTE GABI'},
+        {d:'27/01',v:320,det:'SESSÃO ANA CAROL'},{d:'29/01',v:800,det:'PACOTE LIVIA'},
+        {d:'29/01',v:320,det:'SESSÃO TATI'},{d:'14/01',v:320,det:'SESSÃO SIMONE'},
+        {d:'14/01',v:320,det:'SESSÃO JULIANA'},{d:'30/01',v:320,det:'SESSÃO RENATA'},
+      ],
+      saidas:[
+        {d:'01/01',v:-55.34,det:'CELULAR'},{d:'10/01',v:-514.29,det:'CURSO'},
+        {d:'10/01',v:-562.5,det:'CURSO'},{d:'01/01',v:-266.36,det:'LENÇOIS'},
+        {d:'05/01',v:-196,det:'PRODUTOS'},{d:'10/01',v:-13,det:'MIMO'},
+        {d:'13/01',v:-208.56,det:'HOTEL'},{d:'14/01',v:-183.52,det:'GASOLINA'},
+        {d:'01/01',v:-55,det:'CELULAR'},{d:'01/01',v:-310.26,det:'MKT ATÉ JULHO'},
+        {d:'01/01',v:-195.18,det:'EVENTO RENATA'},{d:'01/01',v:-281.41,det:'MKT ATÉ JULHO'},
+        {d:'01/01',v:-155.13,det:'MKT ATÉ JULHO'},{d:'01/01',v:-500,det:'CONSULTORIA MAIO'},
+        {d:'15/01',v:-76,det:'CREME'},{d:'16/01',v:-196,det:'PRODUTOS'},
+        {d:'20/01',v:-177.01,det:'GASOLINA'},{d:'21/01',v:114.9,det:'MIMO (CRÉDITO)'},
+        {d:'23/01',v:-42,det:'SMART CEO'},{d:'28/01',v:-30,det:'MATERIAL'},
+        {d:'30/01',v:-67,det:'CREME'},{d:'30/01',v:-39,det:'COMIDA'},
+        {d:'30/01',v:-1000,det:'CARRO'},
+      ]
+    },
+    Fev:{rec:10660,desp:-5394.77,atend:17,
+      entradas:[
+        {d:'04/02',v:2890,det:'RICCI'},{d:'04/02',v:320,det:'IGOR'},
+        {d:'06/02',v:320,det:'FERNANDA'},{d:'10/02',v:1120,det:'PACOTE MIRELLA'},
+        {d:'10/02',v:1120,det:'PACOTE FLAVIA'},{d:'11/02',v:320,det:'LETICIA'},
+        {d:'11/02',v:320,det:'ANA CAROL'},{d:'11/02',v:800,det:'PACOTE MARCELA'},
+        {d:'11/02',v:200,det:'RICCI'},{d:'13/02',v:1120,det:'PACOTE ELAINE'},
+        {d:'10/02',v:800,det:'PACOTE MARCELA'},{d:'12/02',v:400,det:'DANIELLE'},
+        {d:'24/02',v:1500,det:'PACOTE CAROLINA'},{d:'24/02',v:400,det:'SESSÃO ERIKA'},
+        {d:'21/02',v:400,det:'SESSÃO ERIKA'},{d:'20/02',v:800,det:'PACOTE GEOVANA'},
+        {d:'19/02',v:320,det:'SESSÃO CLAUDIA'},
+      ],
+      saidas:[
+        {d:'01/02',v:-195.18,det:'EVENTO RENATA'},{d:'01/02',v:-55,det:'CELULAR'},
+        {d:'01/02',v:-310.26,det:'MKT'},{d:'01/02',v:-281.41,det:'MKT ATÉ JULHO'},
+        {d:'01/02',v:-196,det:'PRODUTO'},{d:'14/02',v:-600,det:'INSTALAÇÃO AR'},
+        {d:'14/02',v:-78,det:'CREME'},{d:'01/02',v:-228,det:'GASOLINA'},
+        {d:'01/02',v:-175,det:'CAPA PARA MACA'},{d:'01/02',v:-532.51,det:'CURSO'},
+        {d:'01/02',v:-514.29,det:'CURSO'},{d:'01/02',v:-71,det:'ALMOÇO'},
+        {d:'05/02',v:-126,det:'SALA'},{d:'01/02',v:-153,det:'VESTIDO EVENTO'},
+        {d:'01/02',v:-195.19,det:'PRODUTO'},{d:'13/02',v:-600,det:'INSTALAÇÃO DO AR'},
+        {d:'13/02',v:-88.15,det:'CREME'},{d:'13/02',v:-1050,det:'SALA'},
+        {d:'12/02',v:-42,det:'SMART CEO'},{d:'10/02',v:-562.29,det:'CURSO'},
+      ]
+    },
+    Mar:{rec:28080,desp:-6798.91,atend:34,
+      entradas:[
+        {d:'02/03',v:800,det:'ERIKA'},{d:'02/03',v:1160,det:'LUCIANA VALENTE'},
+        {d:'02/03',v:320,det:'MARIANA D'},{d:'02/03',v:1160,det:'PITI'},
+        {d:'05/03',v:250,det:'ISABELLA'},{d:'05/03',v:100,det:'MIRELA'},
+        {d:'07/03',v:1200,det:'GIOVANA MELIGLIOLATO'},{d:'09/03',v:1120,det:'CLAUDIA'},
+        {d:'12/03',v:1200,det:'ANA CAROL'},{d:'11/03',v:400,det:'ERICA'},
+        {d:'10/03',v:800,det:'GABRIELA PORTO'},{d:'12/03',v:1200,det:'ANA CAROL'},
+        {d:'16/03',v:320,det:'ISABELA BUENO'},{d:'16/03',v:280,det:'AMANDA GABRIELE'},
+        {d:'17/03',v:1200,det:'PRISCILA KREPS'},{d:'19/03',v:1520,det:'RAFA ALBEL'},
+        {d:'19/03',v:400,det:'LUCIENE OLIVEIRA'},{d:'22/03',v:400,det:'CAROLINA BERENGUE'},
+        {d:'23/03',v:1560,det:'CAROLINA'},{d:'25/03',v:1200,det:'LUCI'},
+        {d:'25/03',v:1560,det:'FLAVIA CASADEI'},{d:'25/03',v:250,det:'ISA BASSETO'},
+        {d:'26/03',v:400,det:'MARIA CRISTINA'},{d:'26/03',v:1000,det:'MAYARA'},
+        {d:'26/03',v:400,det:'ALETEIA'},{d:'27/03',v:1200,det:'ELAINE'},
+        {d:'27/03',v:1200,det:'FLAVIA QUEIROS'},{d:'27/03',v:1160,det:'LUCIANA VALENTE'},
+        {d:'27/03',v:800,det:'LU/ANA'},{d:'29/03',v:800,det:'CAROLINA GRAMA'},
+        {d:'27/03',v:800,det:'NATALIA'},{d:'27/03',v:320,det:'DANIELE'},
+        {d:'29/03',v:800,det:'ADICIONAL'},
+      ],
+      saidas:[
+        {d:'01/03',v:-196,det:'PRODUTO'},{d:'01/03',v:-153,det:'VESTIDO'},
+        {d:'01/03',v:-195.09,det:'PRODUTO'},{d:'01/03',v:514.29,det:'REEMBOLSO CURSO'},
+        {d:'01/03',v:-175,det:'ESPELHO'},{d:'01/03',v:-35,det:'TAPETE SALA'},
+        {d:'01/03',v:-111,det:'PLACA SALA'},{d:'01/03',v:-73.89,det:'VASO SALA'},
+        {d:'01/03',v:-229,det:'LEROY SALA'},{d:'01/03',v:-256,det:'AR SALA'},
+        {d:'01/03',v:-276,det:'PRODUTO'},{d:'01/03',v:-77,det:'ARANDELAS'},
+        {d:'01/03',v:-46,det:'PUFF'},{d:'01/03',v:-118,det:'LUMINÁRIA'},
+        {d:'01/03',v:-31.79,det:'CAFÉ'},{d:'02/03',v:-25.19,det:'CAFÉ'},
+        {d:'02/03',v:-1100,det:'SALA'},{d:'02/03',v:-41,det:'CREME'},
+        {d:'06/03',v:-190,det:'SALA'},{d:'09/03',v:-99.96,det:'SALA'},
+        {d:'09/03',v:-42.5,det:'CREME'},{d:'09/03',v:-9.99,det:'SALA'},
+        {d:'13/03',v:-10.88,det:'CREME'},{d:'10/03',v:-80,det:'SALA'},
+        {d:'10/03',v:-9.98,det:'FITA'},{d:'10/03',v:-37.85,det:'SALA'},
+        {d:'10/03',v:-47.1,det:'ALMOÇO'},{d:'10/03',v:-288.88,det:'CREMES'},
+        {d:'14/03',v:-139,det:'SALA'},{d:'14/03',v:-322.28,det:'CREMES'},
+        {d:'01/03',v:-55,det:'CELULAR'},
+      ]
+    },
+    Abr:{rec:0,desp:-4342.19,atend:0,entradas:[],saidas:[
+      {d:'01/04',v:-153,det:'VESTIDO'},{d:'01/04',v:-195.09,det:'PRODUTO'},
+      {d:'01/04',v:-111,det:'PLACA SALA'},{d:'01/04',v:-229,det:'LEROY SALA'},
+      {d:'01/04',v:-256,det:'AR SALA'},{d:'01/04',v:-46,det:'PUFF'},
+      {d:'01/04',v:-514.29,det:'CURSO'},{d:'01/04',v:-322.28,det:'CREMES'},
+      {d:'01/04',v:-55,det:'CELULAR'},{d:'01/04',v:-80,det:'MEI'},
+      {d:'01/04',v:-750,det:'SALA'},{d:'01/04',v:-600,det:'AR INSTALAÇÃO'},
+      {d:'01/04',v:-1050,det:'SALA'},{d:'01/04',v:-80,det:'MEI'},
+    ]},
+    Mai:{rec:0,desp:-1702.4,atend:0,entradas:[],saidas:[
+      {d:'01/05',v:-229,det:'LEROY SALA'},{d:'01/05',v:-256,det:'AR SALA'},
+      {d:'01/05',v:-46,det:'PUFF'},{d:'01/05',v:-322.28,det:'CREMES'},
+      {d:'01/05',v:-55,det:'CELULAR'},{d:'01/05',v:-80,det:'MEI'},
+      {d:'01/05',v:-750,det:'SALA'},{d:'01/05',v:-111,det:'PLACA SALA'},
+      {d:'01/05',v:-80,det:'MEI'},{d:'01/05',v:-80,det:'INSS'},
+    ]},
+    Jun:{rec:0,desp:-1702.4,atend:0,entradas:[],saidas:[
+      {d:'01/06',v:-229,det:'LEROY SALA'},{d:'01/06',v:-256,det:'AR SALA'},
+      {d:'01/06',v:-46,det:'PUFF'},{d:'01/06',v:-322.28,det:'CREMES'},
+      {d:'01/06',v:-55,det:'CELULAR'},{d:'01/06',v:-80,det:'MEI'},
+      {d:'01/06',v:-750,det:'SALA'},{d:'01/06',v:-111,det:'PLACA SALA'},
+    ]},
+    Jul:{rec:0,desp:-4720.96,atend:0,entradas:[],saidas:[
+      {d:'01/07',v:-270,det:'SPA RENATA'},{d:'01/07',v:-170,det:'MACA'},
+      {d:'01/07',v:-139,det:'CREME'},{d:'01/07',v:-80,det:'MEI'},
+      {d:'01/07',v:-550,det:'CURSO'},{d:'01/07',v:-310,det:'MKT'},
+      {d:'01/07',v:-310,det:'MKT'},{d:'01/07',v:-389,det:'MANTA TÉRMICA'},
+      {d:'01/07',v:-272,det:'ÓLEO'},{d:'01/07',v:-229,det:'LEROY SALA'},
+      {d:'01/07',v:-256,det:'AR SALA'},{d:'01/07',v:-46,det:'PUFF'},
+      {d:'01/07',v:-55,det:'CELULAR'},{d:'01/07',v:-80,det:'MEI'},
+      {d:'01/07',v:-750,det:'SALA'},{d:'01/07',v:-100,det:'CURSO'},
+      {d:'01/07',v:-100,det:'LENÇOL'},{d:'01/07',v:-563,det:'CURSO'},
+    ]},
+    Ago:{rec:0,desp:-1561.99,atend:0,entradas:[],saidas:[
+      {d:'01/08',v:-256,det:'AR SALA'},{d:'01/08',v:-46,det:'PUFF'},
+      {d:'01/08',v:-80,det:'MEI'},{d:'01/08',v:-55,det:'CELULAR'},
+      {d:'01/08',v:-750,det:'SALA'},{d:'01/08',v:-374.99,det:'OUTROS'},
+    ]},
+    Set:{rec:0,desp:-1481,atend:0,entradas:[],saidas:[
+      {d:'01/09',v:-256,det:'AR SALA'},{d:'01/09',v:-55,det:'CELULAR'},
+      {d:'01/09',v:-80,det:'MEI'},{d:'01/09',v:-750,det:'SALA'},
+      {d:'01/09',v:-340,det:'OUTROS'},
+    ]},
+    Out:{rec:0,desp:-1481,atend:0,entradas:[],saidas:[
+      {d:'01/10',v:-256,det:'AR SALA'},{d:'01/10',v:-55,det:'CELULAR'},
+      {d:'01/10',v:-80,det:'MEI'},{d:'01/10',v:-750,det:'SALA'},
+      {d:'01/10',v:-340,det:'OUTROS'},
+    ]},
+    Nov:{rec:0,desp:-1885,atend:0,entradas:[],saidas:[
+      {d:'01/11',v:-1000,det:'CARRO'},{d:'01/11',v:-55,det:'CELULAR'},
+      {d:'01/11',v:-80,det:'MEI'},{d:'01/11',v:-750,det:'SALA'},
+    ]},
+    Dez:{rec:0,desp:-985,atend:0,entradas:[],saidas:[
+      {d:'01/12',v:-55,det:'CELULAR'},{d:'01/12',v:-100,det:'CARRO'},
+      {d:'01/12',v:-80,det:'MEI'},{d:'01/12',v:-750,det:'SALA'},
+    ]},
+  },
+  2025:{
+    Jan:{rec:15320,desp:-5008.66,atend:15,entradas:[],saidas:[]},
+    Fev:{rec:10660,desp:-5394.77,atend:17,entradas:[],saidas:[]},
+    Mar:{rec:8510,desp:-4807.59,atend:11,entradas:[],saidas:[]},
+    Abr:{rec:0,desp:-2711.66,atend:0,entradas:[],saidas:[]},
+    Mai:{rec:0,desp:-849.28,atend:0,entradas:[],saidas:[]},
+    Jun:{rec:6630,desp:-849.28,atend:7,entradas:[],saidas:[]},
+    Jul:{rec:0,desp:-4067,atend:0,entradas:[],saidas:[]},
+    Ago:{rec:0,desp:-1527,atend:0,entradas:[],saidas:[]},
+    Set:{rec:0,desp:-1481,atend:0,entradas:[],saidas:[]},
+    Out:{rec:0,desp:-1481,atend:0,entradas:[],saidas:[]},
+    Nov:{rec:0,desp:-1885,atend:0,entradas:[],saidas:[]},
+    Dez:{rec:0,desp:-985,atend:0,entradas:[],saidas:[]},
+  },
+  2024:{
+    Jan:{rec:15320,desp:-5008.66,atend:15,entradas:[],saidas:[]},
+    Fev:{rec:10660,desp:-5394.77,atend:17,entradas:[],saidas:[]},
+    Mar:{rec:8510,desp:-4807.59,atend:11,entradas:[],saidas:[]},
+    Abr:{rec:0,desp:-2711.66,atend:0,entradas:[],saidas:[]},
+    Mai:{rec:0,desp:-849.28,atend:0,entradas:[],saidas:[]},
+    Jun:{rec:6630,desp:-849.28,atend:7,entradas:[],saidas:[]},
+    Jul:{rec:0,desp:-4067,atend:0,entradas:[],saidas:[]},
+    Ago:{rec:0,desp:-1527,atend:0,entradas:[],saidas:[]},
+    Set:{rec:0,desp:-1481,atend:0,entradas:[],saidas:[]},
+    Out:{rec:0,desp:-1481,atend:0,entradas:[],saidas:[]},
+    Nov:{rec:0,desp:-1885,atend:0,entradas:[],saidas:[]},
+    Dez:{rec:0,desp:-985,atend:0,entradas:[],saidas:[]},
+  }
+};
+
+const ANIVERSARIOS_BASE = [
+  {nome:'Jefferson',aniv:'08/01',cidade:'Valinhos',condo:'Moinho do Vento'},
+  {nome:'Rafaela Albanell',aniv:'20/01',cidade:'',condo:''},
+  {nome:'Talita Amaro',aniv:'28/01',cidade:'',condo:''},
+  {nome:'Flávia Queiroz',aniv:'08/02',cidade:'Valinhos',condo:'Moinho do Vento'},
+  {nome:'Heloísa Franco',aniv:'24/02',cidade:'Valinhos',condo:''},
+  {nome:'Marcela Pereira',aniv:'23/03',cidade:'Valinhos',condo:''},
+  {nome:'Mirella',aniv:'27/05',cidade:'Valinhos',condo:'Flor da Serra'},
+  {nome:'Giulia Siqueira',aniv:'15/06',cidade:'',condo:''},
+  {nome:'Denise Machado',aniv:'27/06',cidade:'Vinhedo',condo:'Bosques de Grevilea'},
+  {nome:'Claudia Melo',aniv:'17/07',cidade:'Valinhos',condo:'Vivenda das Cerejeiras'},
+  {nome:'Thatiana Pisani',aniv:'15/07',cidade:'',condo:'Campo do Toscana'},
+  {nome:'Amanda Paccini',aniv:'31/07',cidade:'Valinhos',condo:'Zurich Dorf'},
+  {nome:'Clarissa',aniv:'07/09',cidade:'Vinhedo',condo:'Villa di Treviso'},
+  {nome:'Elaine Carpes',aniv:'19/09',cidade:'',condo:'Millennium'},
+  {nome:'Juliane',aniv:'16/09',cidade:'Valinhos',condo:''},
+  {nome:'Paula Basso',aniv:'12/10',cidade:'',condo:'Campo de Toscana'},
+  {nome:'Márcia',aniv:'29/11',cidade:'Valinhos',condo:'Reserva Colonial'},
+  {nome:'Priscila',aniv:'08/12',cidade:'Valinhos',condo:''},
+  {nome:'Thaína',aniv:'17/12',cidade:'Campinas',condo:''},
+  {nome:'Lívia Granato',aniv:'23/12',cidade:'',condo:'Terras do Oriente'},
+];
+
+const CUSTO_BASE = [
+  {nome:'Óleo (ml 220)',preco:130,rend:5},
+  {nome:'Creme Facial (g 500)',preco:190,rend:10},
+  {nome:'Creme Corporal (kg 0.3)',preco:60,rend:5},
+  {nome:'Água de Lençol (ml 520)',preco:120,rend:15},
+  {nome:'Lençol (lavagem)',preco:18,rend:1},
+  {nome:'Fronha (lavagem)',preco:11,rend:1},
+  {nome:'Toalha Rosto (lavagem)',preco:6,rend:1},
+  {nome:'Toalha Corpo (lavagem)',preco:8,rend:1},
+  {nome:'Deslocamento (média)',preco:40,rend:1},
+];
+
+const FIXOS_BASE = [
+  {nome:'Sala',valor:750},
+  {nome:'AR Sala',valor:256},
+  {nome:'MEI',valor:80},
+  {nome:'Celular',valor:55},
+];
+
+// ── STATE ──
+let currentYear = 2026;
+let currentTipo = 'rec';
+let customEntries = JSON.parse(localStorage.getItem('cl_custom')||'{}');
+let customAnivs = JSON.parse(localStorage.getItem('cl_anivs')||'[]');
+let custoItens = JSON.parse(localStorage.getItem('cl_custo')||JSON.stringify(CUSTO_BASE));
+let fixosItens = JSON.parse(localStorage.getItem('cl_fixos')||JSON.stringify(FIXOS_BASE));
+
+function save() {
+  localStorage.setItem('cl_custom', JSON.stringify(customEntries));
+  localStorage.setItem('cl_anivs', JSON.stringify(customAnivs));
+  localStorage.setItem('cl_custo', JSON.stringify(custoItens));
+  localStorage.setItem('cl_fixos', JSON.stringify(fixosItens));
+}
+
+function getMesData(ano, mes) {
+  const base = JSON.parse(JSON.stringify(BASE[ano]?.[mes] || {rec:0,desp:0,atend:0,entradas:[],saidas:[]}));
+  const key = `${ano}_${mes}`;
+  const extras = customEntries[key] || [];
+  for(const e of extras) {
+    if(e.tipo==='rec') { base.rec += e.valor; base.entradas.push({d:e.d,v:e.valor,det:e.det,_id:e.id}); }
+    else { base.desp -= e.valor; base.saidas.push({d:e.d,v:-e.valor,det:e.det,_id:e.id}); }
+  }
+  return base;
+}
+
+function getAnoData(ano) {
+  const meses = {};
+  let totalRec=0,totalDesp=0,totalAtend=0;
+  for(const m of MESES) {
+    meses[m] = getMesData(ano, m);
+    totalRec += meses[m].rec;
+    totalDesp += meses[m].desp;
+    totalAtend += meses[m].atend;
+  }
+  return {meses, totalRec, totalDesp, totalAtend};
+}
+
+function fmt(v) {
+  const abs = Math.abs(v);
+  const s = abs.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return 'R$ '+s;
+}
+function fmtShort(v) {
+  if(Math.abs(v)>=1000) return 'R$ '+(v/1000).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'k';
+  return fmt(v);
+}
+
+// ── NAVIGATION ──
+function goPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const btns = document.querySelectorAll('.nav-btn');
+  const idx = ['inicio','lancamentos','grafico','aniversarios','custo'].indexOf(id);
+  if(idx>=0) btns[idx].classList.add('active');
+  if(id==='inicio') renderInicio();
+  if(id==='grafico') renderGrafico();
+  if(id==='aniversarios') renderAniversarios();
+  if(id==='custo') renderCusto();
+  if(id==='lancamentos') renderRecentes();
+}
+
+function notif(msg) {
+  const el = document.getElementById('notif');
+  el.textContent = msg; el.style.display='block';
+  setTimeout(()=>el.style.display='none', 2200);
+}
+
+// ── INÍCIO ──
+function renderInicio() {
+  // year bar
+  const ybar = document.getElementById('year-bar');
+  ybar.innerHTML = [2024,2025,2026].map(y=>`<button class="year-btn ${y===currentYear?'active':''}" onclick="setYear(${y})">${y}</button>`).join('');
+  document.getElementById('year-label').textContent = currentYear;
+
+  const d = getAnoData(currentYear);
+  const sobra = d.totalRec + d.totalDesp;
+  const tickets = MESES.map(m=>d.meses[m]).filter(m=>m.atend>0).map(m=>m.rec/m.atend);
+  const ticket = tickets.length ? tickets.reduce((a,b)=>a+b)/tickets.length : 0;
+
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi kpi-green"><div class="kpi-label">Receitas</div><div class="kpi-value green">${fmtShort(d.totalRec)}</div><div class="kpi-sub">Ano ${currentYear}</div></div>
+    <div class="kpi kpi-red"><div class="kpi-label">Despesas</div><div class="kpi-value red">${fmtShort(Math.abs(d.totalDesp))}</div><div class="kpi-sub">Ano ${currentYear}</div></div>
+    <div class="kpi kpi-${sobra>=0?'green':'red'}"><div class="kpi-label">Sobra</div><div class="kpi-value ${sobra>=0?'green':'red'}">${fmtShort(sobra)}</div><div class="kpi-sub">Resultado</div></div>
+    <div class="kpi kpi-gold"><div class="kpi-label">Ticket Médio</div><div class="kpi-value">${fmtShort(ticket)}</div><div class="kpi-sub">${d.totalAtend} atend.</div></div>
+  `;
+
+  const maxRec = Math.max(...MESES.map(m=>d.meses[m].rec||0),1);
+  document.getElementById('month-list').innerHTML = MESES.map(m=>{
+    const mes = d.meses[m];
+    const sobra = mes.rec+mes.desp;
+    const pct = Math.min(100,(mes.rec/maxRec)*100);
+    const neg = sobra<0;
+    return `<div class="month-item" onclick="showDetail('${m}')">
+      <div class="month-dot" style="background:${neg?'var(--red)':'var(--green)'}"></div>
+      <div style="flex:1">
+        <div class="month-name">${MESES_FULL[m]}</div>
+        <div style="font-size:11px;color:var(--muted)">${mes.atend>0?mes.atend+' atend.':''}</div>
+        <div class="mini-bar"><div class="mini-bar-fill ${neg?'neg':''}" style="width:${pct}%;background:${neg?'var(--red)':'var(--green)'}"></div></div>
+      </div>
+      <div class="month-vals">
+        <div class="month-sobra" style="color:${neg?'var(--red)':'var(--green)'}">${fmtShort(sobra)}</div>
+        <div class="month-sub">${fmtShort(mes.rec)} / ${fmtShort(Math.abs(mes.desp))}</div>
+      </div>
+      <div class="month-arrow">›</div>
+    </div>`;
+  }).join('');
+}
+
+function setYear(y) {
+  currentYear = y;
+  closeDetail();
+  renderInicio();
+}
+
+function showDetail(mes) {
+  document.getElementById('month-list-wrap').style.display='none';
+  document.getElementById('kpis').style.display='none';
+  document.getElementById('year-bar').style.display='none';
+  document.getElementById('detail-view').style.display='block';
+
+  const d = getMesData(currentYear, mes);
+  const sobra = d.rec+d.desp;
+  const ticket = d.atend>0 ? d.rec/d.atend : 0;
+
+  const recRows = d.entradas.length ? d.entradas.map(e=>`
+    <div class="entry-row">
+      <span class="entry-date">${e.d}</span>
+      <span class="entry-det">${e.det}</span>
+      <span class="entry-val pos">${fmt(e.v)}</span>
+      ${e._id?`<button class="delete-btn" onclick="deleteEntry('${currentYear}_${mes}',${e._id})">✕</button>`:''}
+    </div>`).join('') : '<div class="empty">Sem receitas</div>';
+
+  const despRows = d.saidas.length ? d.saidas.map(e=>`
+    <div class="entry-row">
+      <span class="entry-date">${e.d}</span>
+      <span class="entry-det">${e.det}</span>
+      <span class="entry-val neg">${fmt(e.v)}</span>
+      ${e._id?`<button class="delete-btn" onclick="deleteEntry('${currentYear}_${mes}',${e._id})">✕</button>`:''}
+    </div>`).join('') : '<div class="empty">Sem despesas</div>';
+
+  document.getElementById('detail-content').innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div class="kpi kpi-green" style="flex:1"><div class="kpi-label">Receitas</div><div class="kpi-value green" style="font-size:16px">${fmt(d.rec)}</div></div>
+      <div class="kpi kpi-red" style="flex:1"><div class="kpi-label">Despesas</div><div class="kpi-value red" style="font-size:16px">${fmt(Math.abs(d.desp))}</div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <div class="kpi kpi-${sobra>=0?'green':'red'}" style="flex:1"><div class="kpi-label">Sobra</div><div class="kpi-value ${sobra>=0?'green':'red'}" style="font-size:16px">${fmt(sobra)}</div></div>
+      ${ticket>0?`<div class="kpi kpi-gold" style="flex:1"><div class="kpi-label">Ticket Médio</div><div class="kpi-value" style="font-size:16px">${fmt(ticket)}</div><div class="kpi-sub">${d.atend} atend.</div></div>`:''}
+    </div>
+    <div class="card" style="padding:14px">
+      <div class="section-head green"><span>💰 Receitas</span><span>${fmt(d.rec)}</span></div>
+      ${recRows}
+    </div>
+    <div class="card" style="padding:14px">
+      <div class="section-head red"><span>💸 Despesas</span><span>${fmt(Math.abs(d.desp))}</span></div>
+      ${despRows}
+    </div>
+  `;
+}
+
+function closeDetail() {
+  document.getElementById('month-list-wrap').style.display='';
+  document.getElementById('kpis').style.display='';
+  document.getElementById('year-bar').style.display='';
+  document.getElementById('detail-view').style.display='none';
+}
+
+// ── LANÇAMENTOS ──
+function setTipo(t) {
+  currentTipo = t;
+  document.getElementById('tipo-rec').className = 'btn '+(t==='rec'?'btn-green':'btn-outline');
+  document.getElementById('tipo-desp').className = 'btn '+(t==='desp'?'btn-red':'btn-outline');
+}
+
+function salvarLancamento() {
+  const mes = document.getElementById('f-mes').value;
+  const ano = document.getElementById('f-ano').value;
+  const data = document.getElementById('f-data').value;
+  const valor = parseFloat(document.getElementById('f-valor').value);
+  const det = document.getElementById('f-detalhe').value.trim().toUpperCase();
+  if(!valor||!det) { notif('⚠️ Preencha valor e detalhe'); return; }
+  const d = data ? new Date(data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '—';
+  const key = `${ano}_${mes}`;
+  if(!customEntries[key]) customEntries[key]=[];
+  customEntries[key].push({id:Date.now(),tipo:currentTipo,d,valor:Math.abs(valor),det});
+  save();
+  document.getElementById('f-valor').value='';
+  document.getElementById('f-detalhe').value='';
+  notif(currentTipo==='rec'?'✅ Receita lançada!':'✅ Despesa lançada!');
+  renderRecentes();
+}
+
+function renderRecentes() {
+  const all = [];
+  for(const [key,arr] of Object.entries(customEntries))
+    for(const e of arr) all.push({key,...e});
+  all.sort((a,b)=>b.id-a.id);
+  const el = document.getElementById('recentes-list');
+  if(!all.length){el.innerHTML='<div class="empty">Nenhum lançamento manual ainda</div>';return;}
+  el.innerHTML = all.slice(0,20).map(e=>`
+    <div class="entry-row">
+      <span class="tag ${e.tipo==='rec'?'tag-green':'tag-red'}" style="margin-right:8px">${e.tipo==='rec'?'REC':'DESP'}</span>
+      <span class="entry-det">${e.det}</span>
+      <span class="entry-val ${e.tipo==='rec'?'pos':'neg'}" style="margin:0 6px">${e.tipo==='rec'?'+':'-'} ${fmt(e.valor)}</span>
+      <button class="delete-btn" onclick="deleteEntry('${e.key}',${e.id},true)">✕</button>
+    </div>`).join('');
+}
+
+function deleteEntry(key,id,fromList=false) {
+  if(!customEntries[key]) return;
+  customEntries[key] = customEntries[key].filter(e=>e.id!==id);
+  save();
+  notif('🗑 Removido');
+  if(fromList) renderRecentes();
+  else {
+    const mes = key.split('_')[1];
+    showDetail(mes);
+  }
+}
+
+// ── GRÁFICO ──
+function renderGrafico() {
+  document.getElementById('grafico-year-sel').textContent = currentYear;
+  const d = getAnoData(currentYear);
+  const maxVal = Math.max(...MESES.map(m=>Math.max(d.meses[m].rec||0,Math.abs(d.meses[m].desp||0))),1);
+  const H = 110;
+  const chart = document.getElementById('bar-chart');
+  chart.innerHTML = MESES.map((m,i)=>{
+    const mes = d.meses[m];
+    const rec = mes.rec||0;
+    const desp = Math.abs(mes.desp||0);
+    const sobra = rec-desp;
+    const hR = Math.round((rec/maxVal)*H);
+    const hD = Math.round((desp/maxVal)*H);
+    const hS = sobra>0?Math.round((sobra/maxVal)*H):0;
+    return `<div class="bar-col" style="position:relative">
+      <div style="display:flex;align-items:flex-end;gap:1px;height:${H}px">
+        <div style="width:33%;height:${hR}px;background:var(--green);border-radius:3px 3px 0 0"></div>
+        <div style="width:33%;height:${hD}px;background:var(--red);border-radius:3px 3px 0 0;opacity:.8"></div>
+        <div style="width:33%;height:${hS}px;background:var(--accent2);border-radius:3px 3px 0 0"></div>
+      </div>
+      <div class="bar-label" style="position:static;font-size:9px;color:var(--muted);margin-top:4px;text-align:center">${m}</div>
+    </div>`;
+  }).join('');
+
+  const tbl = document.getElementById('grafico-table');
+  tbl.innerHTML = `<div class="card-title">Resumo Mensal</div>`+
+    MESES.map(m=>{
+      const mes=d.meses[m];
+      const sobra=mes.rec+mes.desp;
+      if(mes.rec===0&&mes.desp===0) return '';
+      return `<div class="custo-row">
+        <div class="custo-label">${MESES_FULL[m]}</div>
+        <div style="font-size:12px;color:var(--green);margin-right:10px">${fmtShort(mes.rec)}</div>
+        <div style="font-size:12px;color:var(--red);margin-right:10px">-${fmtShort(Math.abs(mes.desp))}</div>
+        <div style="font-weight:700;font-size:13px;color:${sobra>=0?'var(--green)':'var(--red)'}">${fmtShort(sobra)}</div>
+      </div>`;
+    }).join('');
+}
+
+// ── ANIVERSÁRIOS ──
+function renderAniversarios() {
+  const todos = [...ANIVERSARIOS_BASE, ...customAnivs];
+  todos.sort((a,b)=>{
+    const [da,ma] = a.aniv.split('/').map(Number);
+    const [db,mb] = b.aniv.split('/').map(Number);
+    return ma!==mb ? ma-mb : da-db;
+  });
+
+  document.getElementById('total-clientes').textContent = todos.length;
+
+  const hoje = new Date();
+  const todayMD = hoje.getMonth()*100 + hoje.getDate();
+  const withDays = todos.map(c=>{
+    const [d,m] = c.aniv.split('/').map(Number);
+    let md = (m-1)*100+d;
+    let diff = md - todayMD;
+    if(diff < -3) diff += 1200; // próximo ano
+    return {...c, diff};
+  });
+  withDays.sort((a,b)=>a.diff-b.diff);
+
+  const prox = withDays.find(c=>c.diff>=0);
+  if(prox) {
+    document.getElementById('prox-aniv-card').style.display='block';
+    document.getElementById('prox-aniv-nome').textContent = prox.nome;
+    document.getElementById('prox-aniv-data').textContent = prox.aniv + (prox.diff===0?' — HOJE! 🎉':prox.diff<=7?` — em ${prox.diff} dias`:'');
+  }
+
+  document.getElementById('clientes-list').innerHTML = withDays.map(c=>{
+    const near = c.diff>=0 && c.diff<=7;
+    const ini = c.nome.charAt(0).toUpperCase();
+    return `<div class="client-card">
+      <div class="client-avatar">${ini}</div>
+      <div class="client-info">
+        <div class="client-name">${c.nome}${near?'<span class="near-badge">EM BREVE</span>':''}</div>
+        <div class="client-meta">${[c.condo,c.cidade].filter(Boolean).join(' · ')||'—'}</div>
+      </div>
+      <div class="client-aniv">🗓 ${c.aniv}</div>
+    </div>`;
+  }).join('');
+}
+
+function salvarAniversario() {
+  const nome = document.getElementById('aniv-nome').value.trim();
+  const dataRaw = document.getElementById('aniv-data').value;
+  const cidade = document.getElementById('aniv-cidade').value.trim();
+  const condo = document.getElementById('aniv-condo').value.trim();
+  if(!nome||!dataRaw){notif('⚠️ Nome e data obrigatórios');return;}
+  const dt = new Date(dataRaw+'T12:00:00');
+  const aniv = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
+  customAnivs.push({nome,aniv,cidade,condo});
+  save();
+  closeModal('modal-aniv');
+  document.getElementById('aniv-nome').value='';
+  document.getElementById('aniv-data').value='';
+  document.getElementById('aniv-cidade').value='';
+  document.getElementById('aniv-condo').value='';
+  notif('🎂 Aniversário cadastrado!');
+  renderAniversarios();
+}
+
+// ── CUSTO ──
+function renderCusto() {
+  const el = document.getElementById('custo-itens');
+  el.innerHTML = custoItens.map((it,i)=>`
+    <div class="custo-row">
+      <div class="custo-label">
+        <div>${it.nome}</div>
+        <div class="custo-sub">R$ ${it.preco.toFixed(2)} ÷ ${it.rend} sessões</div>
+      </div>
+      <span style="color:var(--text2);font-size:13px;margin-right:8px">R$ ${(it.preco/it.rend).toFixed(2)}</span>
+      <button class="delete-btn" onclick="removerItemCusto(${i})">✕</button>
+    </div>`).join('');
+
+  const fixosEl = document.getElementById('fixos-list');
+  let totalFixos=0;
+  fixosEl.innerHTML = fixosItens.map((f,i)=>{
+    totalFixos += f.valor;
+    return `<div class="custo-row">
+      <div class="custo-label">${f.nome}</div>
+      <span style="color:var(--red);font-weight:700">R$ ${f.valor.toFixed(2)}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('fixos-total').textContent = `R$ ${totalFixos.toFixed(2)}`;
+
+  const d = getAnoData(currentYear);
+  const atendMeses = MESES.map(m=>d.meses[m].atend).filter(v=>v>0);
+  const mediaAtend = atendMeses.length ? Math.round(atendMeses.reduce((a,b)=>a+b)/atendMeses.length) : 15;
+  document.getElementById('fixos-por-sessao').textContent = `Com média de ${mediaAtend} sessões/mês → R$ ${(totalFixos/mediaAtend).toFixed(2)} de fixo por sessão`;
+
+  calcCusto();
+}
+
+function calcCusto() {
+  const total = custoItens.reduce((s,it)=>s+(it.preco/it.rend),0);
+  const ticket = parseFloat(document.getElementById('ticket-sessao')?.value||320);
+  const lucro = ticket - total;
+  document.getElementById('custo-total').textContent = `R$ ${total.toFixed(2)}`;
+  document.getElementById('lucro-sessao').textContent = `R$ ${lucro.toFixed(2)}`;
+  document.getElementById('lucro-sessao').style.color = lucro>=0?'var(--green)':'var(--red)';
+}
+
+function addItemCusto() { openModal('modal-item-custo'); }
+
+function salvarItemCusto() {
+  const nome = document.getElementById('ci-nome').value.trim();
+  const preco = parseFloat(document.getElementById('ci-preco').value);
+  const rend = parseFloat(document.getElementById('ci-rend').value);
+  if(!nome||!preco||!rend){notif('⚠️ Preencha todos os campos');return;}
+  custoItens.push({nome,preco,rend});
+  save();
+  closeModal('modal-item-custo');
+  document.getElementById('ci-nome').value='';
+  document.getElementById('ci-preco').value='';
+  document.getElementById('ci-rend').value='';
+  notif('✅ Item adicionado!');
+  renderCusto();
+}
+
+function removerItemCusto(i) {
+  custoItens.splice(i,1);
+  save();
+  renderCusto();
+}
+
+// ── MODALS ──
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModalOutside(e,id) { if(e.target.id===id) closeModal(id); }
+
+// ── INIT ──
+document.getElementById('f-data').valueAsDate = new Date();
+renderInicio();
+</script>
+</body>
+</html>
