@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CL · DRE</title>
+<title>CL Relaxamente · DRE</title>
 <style>
 :root {
   --bg: #f5f0eb;
@@ -329,6 +329,9 @@ input[type=number].inline { width: 70px; padding: 5px 7px; font-size: 13px; text
 
   <div class="card" id="card-recentes">
     <div class="card-title">Últimos lançamentos manuais</div>
+    <div style="margin-bottom:12px">
+      <button class="btn btn-outline" onclick="exportarCSV()" style="width:100%;padding:11px">📥 Exportar todos os lançamentos em CSV</button>
+    </div>
     <div id="recentes-list"></div>
   </div>
 </div>
@@ -876,6 +879,63 @@ function deleteEntry(key,id,fromList=false) {
     const mes = key.split('_')[1];
     showDetail(mes);
   }
+}
+
+function escapeCSV(value) {
+  const str = String(value ?? '').replace(/"/g, '""');
+  return `"${str}"`;
+}
+
+function exportarCSV() {
+  const linhas = [['tipo','ano','mes','data','valor','detalhe','origem']];
+
+  for (const ano of Object.keys(BASE).sort()) {
+    for (const mes of MESES) {
+      const baseMes = BASE[ano]?.[mes];
+      if (!baseMes) continue;
+
+      (baseMes.entradas || []).forEach(e => {
+        linhas.push(['Receita', ano, MESES_FULL[mes], e.d || '', Number(e.v || 0).toFixed(2), e.det || '', 'Base']);
+      });
+
+      (baseMes.saidas || []).forEach(e => {
+        linhas.push(['Despesa', ano, MESES_FULL[mes], e.d || '', Math.abs(Number(e.v || 0)).toFixed(2), e.det || '', 'Base']);
+      });
+    }
+  }
+
+  for (const [key, arr] of Object.entries(customEntries)) {
+    const [ano, mes] = key.split('_');
+    (arr || []).forEach(e => {
+      linhas.push([
+        e.tipo === 'rec' ? 'Receita' : 'Despesa',
+        ano,
+        MESES_FULL[mes] || mes,
+        e.d || '',
+        Math.abs(Number(e.valor || 0)).toFixed(2),
+        e.det || '',
+        'Manual'
+      ]);
+    });
+  }
+
+  if (linhas.length === 1) {
+    notif('⚠️ Nenhum lançamento para exportar');
+    return;
+  }
+
+  const csv = linhas.map(l => l.map(escapeCSV).join(';')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const hoje = new Date().toISOString().slice(0,10);
+  link.href = url;
+  link.download = `lancamentos-cl-relaxamente-${hoje}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  notif('📁 CSV exportado com sucesso!');
 }
 
 // ── GRÁFICO ──
