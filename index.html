@@ -176,14 +176,7 @@ input:focus, select:focus { border-color: var(--accent); }
 .tag-green { background: var(--green-bg); color: var(--green); }
 .tag-red { background: var(--red-bg); color: var(--red); }
 
-/* CHART */
-.bar-chart { display: flex; align-items: flex-end; gap: 5px; height: 140px; padding-bottom: 24px; position: relative; }
-.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
-.bar-seg { width: 100%; border-radius: 4px 4px 0 0; transition: height .4s; }
-.bar-label { font-size: 9px; color: var(--muted); margin-top: 4px; position: absolute; bottom: 0; }
-.chart-legend { display: flex; gap: 14px; justify-content: center; margin-top: 8px; }
-.leg { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
-.leg-dot { width: 10px; height: 10px; border-radius: 2px; }
+/* CHART legacy placeholder — see FAB section above */
 
 /* ANIVERSÁRIOS */
 .client-card {
@@ -234,22 +227,60 @@ input[type=number].inline { width: 70px; padding: 5px 7px; font-size: 13px; text
   z-index: 300; display: none; white-space: nowrap;
   box-shadow: 0 4px 20px rgba(0,0,0,.2);
 }
+
+/* FAB */
+.fab {
+  position: fixed; bottom: 28px; right: 22px;
+  width: 58px; height: 58px; border-radius: 50%;
+  background: var(--accent); color: white;
+  font-size: 32px; line-height: 1; border: none; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(139,94,60,.45);
+  z-index: 150; transition: transform .15s, background .15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.fab.open { transform: rotate(45deg); background: var(--red); }
+.fab-menu {
+  position: fixed; bottom: 96px; right: 22px;
+  display: flex; flex-direction: column; gap: 10px;
+  z-index: 149; opacity: 0; pointer-events: none;
+  transform: translateY(12px); transition: all .18s;
+}
+.fab-menu.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+.fab-opt {
+  padding: 11px 20px; border-radius: 24px; border: none; cursor: pointer;
+  font-size: 15px; font-weight: 700; color: white;
+  box-shadow: 0 3px 10px rgba(0,0,0,.18); white-space: nowrap;
+}
+.fab-opt-green { background: var(--green); }
+.fab-opt-red { background: var(--red); }
+
+/* CHART — fix height */
+.bar-chart { display: flex; align-items: flex-end; gap: 3px; height: 160px; padding: 0 0 0 0; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+.bar-labels-row { display: flex; gap: 3px; margin-top: 6px; }
+.bar-label-item { flex: 1; text-align: center; font-size: 9px; color: var(--muted); }
 </style>
 </head>
 <body>
 
 <div class="page-header">
-  <h1>💆 CL </h1>
+  <h1>💆 CL Relaxamente</h1>
   <p>Controle Financeiro</p>
 </div>
 
 <nav>
   <button class="nav-btn active" onclick="goPage('inicio')"><span class="ico">🏠</span>Início</button>
-  <button class="nav-btn" onclick="goPage('lancamentos')"><span class="ico">✏️</span>Lançar</button>
   <button class="nav-btn" onclick="goPage('grafico')"><span class="ico">📊</span>Gráfico</button>
   <button class="nav-btn" onclick="goPage('aniversarios')"><span class="ico">🎂</span>Anivs.</button>
   <button class="nav-btn" onclick="goPage('custo')"><span class="ico">🧴</span>Custo</button>
 </nav>
+
+<!-- FAB flutuante -->
+<button class="fab" id="fab" onclick="toggleFab()">＋</button>
+<div class="fab-menu" id="fab-menu">
+  <button class="fab-opt fab-opt-green" onclick="openLancamento('rec')">💰 Receita</button>
+  <button class="fab-opt fab-opt-red" onclick="openLancamento('desp')">💸 Despesa</button>
+</div>
 
 <!-- NOTIF -->
 <div class="notif" id="notif"></div>
@@ -277,74 +308,18 @@ input[type=number].inline { width: 70px; padding: 5px 7px; font-size: 13px; text
 
 </div>
 
-<!-- ═══════════ LANÇAR ═══════════ -->
-<div class="page" id="page-lancamentos">
-  <div class="card">
-    <div class="card-title">Novo Lançamento</div>
-
-    <div class="form-group">
-      <label>Tipo</label>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-green" id="tipo-rec" onclick="setTipo('rec')" style="flex:1;padding:11px">💰 Receita</button>
-        <button class="btn btn-outline" id="tipo-desp" onclick="setTipo('desp')" style="flex:1;padding:11px">💸 Despesa</button>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>Mês / Ano</label>
-      <div style="display:flex;gap:8px">
-        <select id="f-mes" style="flex:2">
-          <option value="Jan">Janeiro</option><option value="Fev">Fevereiro</option>
-          <option value="Mar">Março</option><option value="Abr">Abril</option>
-          <option value="Mai">Maio</option><option value="Jun">Junho</option>
-          <option value="Jul">Julho</option><option value="Ago">Agosto</option>
-          <option value="Set">Setembro</option><option value="Out">Outubro</option>
-          <option value="Nov">Novembro</option><option value="Dez">Dezembro</option>
-        </select>
-        <select id="f-ano" style="flex:1">
-          <option value="2026">2026</option>
-          <option value="2025">2025</option>
-          <option value="2024">2024</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>Data</label>
-      <input type="date" id="f-data">
-    </div>
-
-    <div class="form-group">
-      <label>Valor (R$)</label>
-      <input type="number" id="f-valor" step="0.01" placeholder="0,00" min="0">
-    </div>
-
-    <div class="form-group">
-      <label>Detalhe / Cliente</label>
-      <input type="text" id="f-detalhe" placeholder="Ex: PACOTE FULANA, GASOLINA...">
-    </div>
-
-    <button class="btn btn-accent" onclick="salvarLancamento()" style="width:100%;margin-top:4px">Salvar Lançamento</button>
-  </div>
-
-  <div class="card" id="card-recentes">
-    <div class="card-title">Últimos lançamentos manuais</div>
-    <div style="margin-bottom:12px">
-      <button class="btn btn-outline" onclick="exportarCSV()" style="width:100%;padding:11px">📥 Exportar todos os lançamentos em CSV</button>
-    </div>
-    <div id="recentes-list"></div>
-  </div>
-</div>
+<!-- lançamentos via modal FAB -->
 
 <!-- ═══════════ GRÁFICO ═══════════ -->
 <div class="page" id="page-grafico">
   <div class="card">
     <div class="card-title">Receita vs Despesa <span id="grafico-year-sel"></span></div>
     <div class="bar-chart" id="bar-chart"></div>
-    <div class="chart-legend">
-      <div class="leg"><div class="leg-dot" style="background:var(--green)"></div> Receita</div>
-      <div class="leg"><div class="leg-dot" style="background:var(--red)"></div> Despesa</div>
-      <div class="leg"><div class="leg-dot" style="background:var(--accent2)"></div> Sobra</div>
+    <div class="bar-labels-row" id="bar-labels"></div>
+    <div class="chart-legend" style="display:flex;gap:14px;justify-content:center;margin-top:10px">
+      <div class="leg" style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)"><div class="leg-dot" style="width:10px;height:10px;border-radius:2px;background:var(--green)"></div> Receita</div>
+      <div class="leg" style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)"><div class="leg-dot" style="width:10px;height:10px;border-radius:2px;background:var(--red)"></div> Despesa</div>
+      <div class="leg" style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)"><div class="leg-dot" style="width:10px;height:10px;border-radius:2px;background:var(--accent2)"></div> Sobra</div>
     </div>
   </div>
   <div class="card" id="grafico-table"></div>
@@ -415,6 +390,42 @@ input[type=number].inline { width: 70px; padding: 5px 7px; font-size: 13px; text
     <div class="form-group"><label>Cidade</label><input type="text" id="aniv-cidade" placeholder="Ex: Valinhos"></div>
     <div class="form-group"><label>Condomínio / Bairro</label><input type="text" id="aniv-condo" placeholder="Opcional"></div>
     <button class="btn btn-accent" onclick="salvarAniversario()" style="width:100%;margin-top:6px">Salvar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-lancamento" onclick="closeModalOutside(event,'modal-lancamento')">
+  <div class="modal">
+    <div class="modal-title" id="modal-lanc-title">💰 Nova Receita <button class="modal-close" onclick="closeModal('modal-lancamento')">×</button></div>
+    <div class="form-group">
+      <label>Data</label>
+      <input type="date" id="f-data">
+    </div>
+    <div class="form-group">
+      <label>Valor (R$)</label>
+      <input type="number" id="f-valor" step="0.01" placeholder="0,00" min="0" inputmode="decimal">
+    </div>
+    <div class="form-group">
+      <label>Detalhe / Cliente</label>
+      <input type="text" id="f-detalhe" placeholder="Ex: PACOTE FULANA, GASOLINA...">
+    </div>
+    <div class="card" id="card-recentes" style="margin-bottom:0;box-shadow:none;border:1.5px solid var(--border);padding:12px">
+      <div class="card-title" style="margin-bottom:10px">Últimos lançamentos</div>
+      <div id="recentes-list"></div>
+    </div>
+    <button class="btn btn-accent" id="btn-salvar-lanc" onclick="salvarLancamento()" style="width:100%;margin-top:14px">Salvar</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-fixo" onclick="closeModalOutside(event,'modal-fixo')">
+  <div class="modal">
+    <div class="modal-title">⚙️ Editar Custo Fixo <button class="modal-close" onclick="closeModal('modal-fixo')">×</button></div>
+    <div class="form-group"><label>Nome</label><input type="text" id="fixo-nome"></div>
+    <div class="form-group"><label>Valor mensal (R$)</label><input type="number" id="fixo-valor" step="0.01"></div>
+    <input type="hidden" id="fixo-idx">
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn btn-accent" onclick="salvarFixo()" style="flex:2">Salvar</button>
+      <button class="btn btn-outline" style="flex:1;color:var(--red)" onclick="deletarFixo()">Excluir</button>
+    </div>
   </div>
 </div>
 
@@ -713,13 +724,37 @@ function goPage(id) {
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   const btns = document.querySelectorAll('.nav-btn');
-  const idx = ['inicio','lancamentos','grafico','aniversarios','custo'].indexOf(id);
+  const idx = ['inicio','grafico','aniversarios','custo'].indexOf(id);
   if(idx>=0) btns[idx].classList.add('active');
+  closeFab();
   if(id==='inicio') renderInicio();
   if(id==='grafico') renderGrafico();
   if(id==='aniversarios') renderAniversarios();
   if(id==='custo') renderCusto();
-  if(id==='lancamentos') renderRecentes();
+}
+
+// ── FAB ──
+function toggleFab() {
+  document.getElementById('fab').classList.toggle('open');
+  document.getElementById('fab-menu').classList.toggle('open');
+}
+function closeFab() {
+  document.getElementById('fab').classList.remove('open');
+  document.getElementById('fab-menu').classList.remove('open');
+}
+function openLancamento(tipo) {
+  closeFab();
+  currentTipo = tipo;
+  const isRec = tipo==='rec';
+  document.getElementById('modal-lanc-title').innerHTML =
+    (isRec?'💰 Nova Receita':'💸 Nova Despesa') +
+    ' <button class="modal-close" onclick="closeModal(\'modal-lancamento\')">×</button>';
+  document.getElementById('btn-salvar-lanc').style.background = isRec?'var(--green)':'var(--red)';
+  document.getElementById('f-data').valueAsDate = new Date();
+  document.getElementById('f-valor').value = '';
+  document.getElementById('f-detalhe').value = '';
+  renderRecentes();
+  openModal('modal-lancamento');
 }
 
 function notif(msg) {
@@ -829,20 +864,18 @@ function closeDetail() {
 }
 
 // ── LANÇAMENTOS ──
-function setTipo(t) {
-  currentTipo = t;
-  document.getElementById('tipo-rec').className = 'btn '+(t==='rec'?'btn-green':'btn-outline');
-  document.getElementById('tipo-desp').className = 'btn '+(t==='desp'?'btn-red':'btn-outline');
-}
-
 function salvarLancamento() {
-  const mes = document.getElementById('f-mes').value;
-  const ano = document.getElementById('f-ano').value;
   const data = document.getElementById('f-data').value;
   const valor = parseFloat(document.getElementById('f-valor').value);
   const det = document.getElementById('f-detalhe').value.trim().toUpperCase();
   if(!valor||!det) { notif('⚠️ Preencha valor e detalhe'); return; }
-  const d = data ? new Date(data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '—';
+  if(!data) { notif('⚠️ Informe a data'); return; }
+  const dt = new Date(data+'T12:00:00');
+  const d = dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+  // derive mes key from date
+  const mesIdx = dt.getMonth(); // 0-based
+  const mes = MESES[mesIdx];
+  const ano = dt.getFullYear();
   const key = `${ano}_${mes}`;
   if(!customEntries[key]) customEntries[key]=[];
   customEntries[key].push({id:Date.now(),tipo:currentTipo,d,valor:Math.abs(valor),det});
@@ -851,6 +884,7 @@ function salvarLancamento() {
   document.getElementById('f-detalhe').value='';
   notif(currentTipo==='rec'?'✅ Receita lançada!':'✅ Despesa lançada!');
   renderRecentes();
+  renderInicio();
 }
 
 function renderRecentes() {
@@ -881,101 +915,50 @@ function deleteEntry(key,id,fromList=false) {
   }
 }
 
-function escapeCSV(value) {
-  const str = String(value ?? '').replace(/"/g, '""');
-  return `"${str}"`;
-}
-
-function exportarCSV() {
-  const linhas = [['tipo','ano','mes','data','valor','detalhe','origem']];
-
-  for (const ano of Object.keys(BASE).sort()) {
-    for (const mes of MESES) {
-      const baseMes = BASE[ano]?.[mes];
-      if (!baseMes) continue;
-
-      (baseMes.entradas || []).forEach(e => {
-        linhas.push(['Receita', ano, MESES_FULL[mes], e.d || '', Number(e.v || 0).toFixed(2), e.det || '', 'Base']);
-      });
-
-      (baseMes.saidas || []).forEach(e => {
-        linhas.push(['Despesa', ano, MESES_FULL[mes], e.d || '', Math.abs(Number(e.v || 0)).toFixed(2), e.det || '', 'Base']);
-      });
-    }
-  }
-
-  for (const [key, arr] of Object.entries(customEntries)) {
-    const [ano, mes] = key.split('_');
-    (arr || []).forEach(e => {
-      linhas.push([
-        e.tipo === 'rec' ? 'Receita' : 'Despesa',
-        ano,
-        MESES_FULL[mes] || mes,
-        e.d || '',
-        Math.abs(Number(e.valor || 0)).toFixed(2),
-        e.det || '',
-        'Manual'
-      ]);
-    });
-  }
-
-  if (linhas.length === 1) {
-    notif('⚠️ Nenhum lançamento para exportar');
-    return;
-  }
-
-  const csv = linhas.map(l => l.map(escapeCSV).join(';')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  const hoje = new Date().toISOString().slice(0,10);
-  link.href = url;
-  link.download = `lancamentos-cl-relaxamente-${hoje}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-  notif('📁 CSV exportado com sucesso!');
-}
-
 // ── GRÁFICO ──
 function renderGrafico() {
   document.getElementById('grafico-year-sel').textContent = currentYear;
   const d = getAnoData(currentYear);
-  const maxVal = Math.max(...MESES.map(m=>Math.max(d.meses[m].rec||0,Math.abs(d.meses[m].desp||0))),1);
-  const H = 110;
+  const allVals = MESES.flatMap(m=>[d.meses[m].rec||0, Math.abs(d.meses[m].desp||0)]);
+  const maxVal = Math.max(...allVals, 1);
+  const H = 140;
   const chart = document.getElementById('bar-chart');
-  chart.innerHTML = MESES.map((m,i)=>{
+  const labelsRow = document.getElementById('bar-labels');
+
+  chart.innerHTML = MESES.map(m=>{
     const mes = d.meses[m];
     const rec = mes.rec||0;
     const desp = Math.abs(mes.desp||0);
-    const sobra = rec-desp;
-    const hR = Math.round((rec/maxVal)*H);
-    const hD = Math.round((desp/maxVal)*H);
-    const hS = sobra>0?Math.round((sobra/maxVal)*H):0;
-    return `<div class="bar-col" style="position:relative">
-      <div style="display:flex;align-items:flex-end;gap:1px;height:${H}px">
-        <div style="width:33%;height:${hR}px;background:var(--green);border-radius:3px 3px 0 0"></div>
-        <div style="width:33%;height:${hD}px;background:var(--red);border-radius:3px 3px 0 0;opacity:.8"></div>
-        <div style="width:33%;height:${hS}px;background:var(--accent2);border-radius:3px 3px 0 0"></div>
+    const sobra = rec - desp;
+    const hR = Math.max(2, Math.round((rec/maxVal)*H));
+    const hD = Math.max(2, Math.round((desp/maxVal)*H));
+    const hS = sobra>0 ? Math.max(2, Math.round((sobra/maxVal)*H)) : 0;
+    const hasData = rec>0||desp>0;
+    if(!hasData) return `<div class="bar-col"><div style="height:${H}px;width:100%;display:flex;align-items:flex-end;gap:1px"></div></div>`;
+    return `<div class="bar-col">
+      <div style="height:${H}px;width:100%;display:flex;align-items:flex-end;gap:1px">
+        <div style="flex:1;height:${hR}px;background:var(--green);border-radius:3px 3px 0 0" title="Rec: ${fmt(rec)}"></div>
+        <div style="flex:1;height:${hD}px;background:var(--red);border-radius:3px 3px 0 0;opacity:.85" title="Desp: ${fmt(desp)}"></div>
+        <div style="flex:1;height:${hS}px;background:var(--accent2);border-radius:3px 3px 0 0" title="Sobra: ${fmt(sobra)}"></div>
       </div>
-      <div class="bar-label" style="position:static;font-size:9px;color:var(--muted);margin-top:4px;text-align:center">${m}</div>
     </div>`;
   }).join('');
 
+  labelsRow.innerHTML = MESES.map(m=>`<div class="bar-label-item">${m}</div>`).join('');
+
   const tbl = document.getElementById('grafico-table');
-  tbl.innerHTML = `<div class="card-title">Resumo Mensal</div>`+
-    MESES.map(m=>{
-      const mes=d.meses[m];
-      const sobra=mes.rec+mes.desp;
-      if(mes.rec===0&&mes.desp===0) return '';
-      return `<div class="custo-row">
-        <div class="custo-label">${MESES_FULL[m]}</div>
-        <div style="font-size:12px;color:var(--green);margin-right:10px">${fmtShort(mes.rec)}</div>
-        <div style="font-size:12px;color:var(--red);margin-right:10px">-${fmtShort(Math.abs(mes.desp))}</div>
-        <div style="font-weight:700;font-size:13px;color:${sobra>=0?'var(--green)':'var(--red)'}">${fmtShort(sobra)}</div>
-      </div>`;
-    }).join('');
+  const rows = MESES.map(m=>{
+    const mes=d.meses[m];
+    const sobra=mes.rec+mes.desp;
+    if(mes.rec===0&&mes.desp===0) return '';
+    return `<div class="custo-row">
+      <div class="custo-label" style="min-width:70px">${MESES_FULL[m]}</div>
+      <div style="font-size:12px;color:var(--green);margin-right:8px;white-space:nowrap">${fmtShort(mes.rec)}</div>
+      <div style="font-size:12px;color:var(--red);margin-right:8px;white-space:nowrap">-${fmtShort(Math.abs(mes.desp))}</div>
+      <div style="font-weight:700;font-size:13px;color:${sobra>=0?'var(--green)':'var(--red)'};white-space:nowrap">${fmtShort(sobra)}</div>
+    </div>`;
+  }).join('');
+  tbl.innerHTML = `<div class="card-title">Resumo Mensal</div>${rows||'<div class="empty">Sem dados</div>'}`;
 }
 
 // ── ANIVERSÁRIOS ──
@@ -1059,9 +1042,12 @@ function renderCusto() {
     totalFixos += f.valor;
     return `<div class="custo-row">
       <div class="custo-label">${f.nome}</div>
-      <span style="color:var(--red);font-weight:700">R$ ${f.valor.toFixed(2)}</span>
+      <span style="color:var(--red);font-weight:700;margin-right:8px">R$ ${f.valor.toFixed(2)}</span>
+      <button class="delete-btn" style="color:var(--accent);font-size:16px" onclick="editarFixo(${i})">✏️</button>
     </div>`;
-  }).join('');
+  }).join('') + `<div style="padding-top:10px">
+    <button class="btn btn-outline" onclick="editarFixo(-1)" style="width:100%;padding:9px;font-size:13px">+ Adicionar fixo</button>
+  </div>`;
   document.getElementById('fixos-total').textContent = `R$ ${totalFixos.toFixed(2)}`;
 
   const d = getAnoData(currentYear);
@@ -1104,13 +1090,46 @@ function removerItemCusto(i) {
   renderCusto();
 }
 
+function editarFixo(i) {
+  if(i===-1) {
+    document.getElementById('fixo-nome').value='';
+    document.getElementById('fixo-valor').value='';
+    document.getElementById('fixo-idx').value='-1';
+  } else {
+    document.getElementById('fixo-nome').value = fixosItens[i].nome;
+    document.getElementById('fixo-valor').value = fixosItens[i].valor;
+    document.getElementById('fixo-idx').value = i;
+  }
+  openModal('modal-fixo');
+}
+
+function salvarFixo() {
+  const nome = document.getElementById('fixo-nome').value.trim();
+  const valor = parseFloat(document.getElementById('fixo-valor').value);
+  const idx = parseInt(document.getElementById('fixo-idx').value);
+  if(!nome||!valor){notif('⚠️ Preencha nome e valor');return;}
+  if(idx===-1) fixosItens.push({nome,valor});
+  else fixosItens[idx] = {nome,valor};
+  save();
+  closeModal('modal-fixo');
+  notif('✅ Custo fixo salvo!');
+  renderCusto();
+}
+
+function deletarFixo() {
+  const idx = parseInt(document.getElementById('fixo-idx').value);
+  if(idx>=0) { fixosItens.splice(idx,1); save(); }
+  closeModal('modal-fixo');
+  notif('🗑 Removido');
+  renderCusto();
+}
+
 // ── MODALS ──
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function closeModalOutside(e,id) { if(e.target.id===id) closeModal(id); }
 
 // ── INIT ──
-document.getElementById('f-data').valueAsDate = new Date();
 renderInicio();
 </script>
 </body>
