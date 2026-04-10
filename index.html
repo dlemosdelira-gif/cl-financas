@@ -266,6 +266,7 @@ input[type=number].inline { width: 70px; padding: 5px 7px; font-size: 13px; text
   <button class="nav-btn active" onclick="goPage('inicio')"><span class="ico">🏠</span>Início</button>
   <button class="nav-btn" onclick="goPage('grafico')"><span class="ico">📊</span>Gráfico</button>
   <button class="nav-btn" onclick="goPage('aniversarios')"><span class="ico">🎂</span>Anivs.</button>
+  <button class="nav-btn" onclick="goPage('alertas')"><span class="ico">🔔</span>Alertas</button>
   <button class="nav-btn" onclick="goPage('custo')"><span class="ico">🧴</span>Custo</button>
 </nav>
 
@@ -328,7 +329,51 @@ input[type=number].inline { width: 70px; padding: 5px 7px; font-size: 13px; text
     <div id="clientes-list"></div>
   </div>
 
-  <button class="btn btn-accent" onclick="openModal('modal-aniv')" style="width:100%;margin-bottom:14px">+ Cadastrar Aniversário</button>
+  <button class="btn btn-accent" onclick="abrirModalAniv(-1)" style="width:100%;margin-bottom:14px">+ Cadastrar Cliente</button>
+</div>
+
+<!-- ═══════════ ALERTAS ═══════════ -->
+<div class="page" id="page-alertas">
+
+  <div class="card" style="background:linear-gradient(135deg,#8b5e3c,#c49a6c);color:white">
+    <div style="font-size:13px;opacity:.8;margin-bottom:4px;text-transform:uppercase;letter-spacing:.8px">🔔 Reengajamento</div>
+    <div style="font-size:15px;font-weight:600">Clientes que precisam de atenção</div>
+    <div style="font-size:12px;opacity:.75;margin-top:4px">Cadastre a última sessão de cada cliente para ativar os alertas</div>
+  </div>
+
+  <!-- Cadastro rápido de última sessão -->
+  <div class="card">
+    <div class="card-title">Registrar última sessão</div>
+    <div class="form-group">
+      <label>Cliente</label>
+      <input type="text" id="alerta-cliente" placeholder="Nome do cliente" list="lista-clientes-datalist">
+      <datalist id="lista-clientes-datalist"></datalist>
+    </div>
+    <div class="form-group">
+      <label>Data da última sessão</label>
+      <input type="date" id="alerta-data-sessao">
+    </div>
+    <div class="form-group">
+      <label>Tipo</label>
+      <select id="alerta-tipo-sessao">
+        <option value="sessao">Sessão avulsa</option>
+        <option value="pacote">Pacote</option>
+      </select>
+    </div>
+    <button class="btn btn-accent" onclick="salvarUltimaSessao()" style="width:100%">Registrar</button>
+  </div>
+
+  <!-- Alertas gerados -->
+  <div class="card">
+    <div class="card-title">Clientes sem sessão recente</div>
+    <div id="alertas-list"><div class="empty">Nenhum alerta por enquanto</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Pacotes a renovar</div>
+    <div id="pacotes-list"><div class="empty">Nenhum pacote pendente</div></div>
+  </div>
+
 </div>
 
 <!-- ═══════════ CUSTO ═══════════ -->
@@ -374,12 +419,19 @@ input[type=number].inline { width: 70px; padding: 5px 7px; font-size: 13px; text
 <!-- ═══════════ MODALS ═══════════ -->
 <div class="modal-overlay" id="modal-aniv" onclick="closeModalOutside(event,'modal-aniv')">
   <div class="modal">
-    <div class="modal-title">🎂 Cadastrar Aniversário <button class="modal-close" onclick="closeModal('modal-aniv')">×</button></div>
+    <div class="modal-title" id="modal-aniv-title">🎂 Cadastrar Cliente <button class="modal-close" onclick="closeModal('modal-aniv')">×</button></div>
+    <input type="hidden" id="aniv-idx">
     <div class="form-group"><label>Nome</label><input type="text" id="aniv-nome" placeholder="Nome do cliente"></div>
     <div class="form-group"><label>Data de Aniversário</label><input type="date" id="aniv-data"></div>
+    <div class="form-group"><label>WhatsApp</label>
+      <input type="tel" id="aniv-wpp" placeholder="Ex: 19999990000 (só números)">
+    </div>
     <div class="form-group"><label>Cidade</label><input type="text" id="aniv-cidade" placeholder="Ex: Valinhos"></div>
     <div class="form-group"><label>Condomínio / Bairro</label><input type="text" id="aniv-condo" placeholder="Opcional"></div>
-    <button class="btn btn-accent" onclick="salvarAniversario()" style="width:100%;margin-top:6px">Salvar</button>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn btn-accent" onclick="salvarAniversario()" style="flex:2" id="btn-salvar-aniv">Salvar</button>
+      <button class="btn btn-outline" id="btn-del-aniv" onclick="deletarAniversario()" style="flex:1;color:var(--red);display:none">Excluir</button>
+    </div>
   </div>
 </div>
 
@@ -434,11 +486,29 @@ input[type=number].inline { width: 70px; padding: 5px 7px; font-size: 13px; text
 
 <div class="modal-overlay" id="modal-item-custo" onclick="closeModalOutside(event,'modal-item-custo')">
   <div class="modal">
-    <div class="modal-title">🧴 Novo Item de Custo <button class="modal-close" onclick="closeModal('modal-item-custo')">×</button></div>
+    <div class="modal-title" id="modal-custo-title">🧴 Item de Custo <button class="modal-close" onclick="closeModal('modal-item-custo')">×</button></div>
+    <input type="hidden" id="ci-idx">
     <div class="form-group"><label>Nome do item</label><input type="text" id="ci-nome" placeholder="Ex: Óleo de massagem"></div>
     <div class="form-group"><label>Preço da embalagem (R$)</label><input type="number" id="ci-preco" step="0.01" placeholder="0,00"></div>
     <div class="form-group"><label>Rendimento (sessões por embalagem)</label><input type="number" id="ci-rend" placeholder="Ex: 10"></div>
-    <button class="btn btn-accent" onclick="salvarItemCusto()" style="width:100%;margin-top:6px">Salvar</button>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn btn-accent" onclick="salvarItemCusto()" style="flex:2">Salvar</button>
+      <button class="btn btn-outline" id="btn-del-custo" onclick="removerItemCustoModal()" style="flex:1;color:var(--red);display:none">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-alerta" onclick="closeModalOutside(event,'modal-alerta')">
+  <div class="modal">
+    <div class="modal-title" id="modal-alerta-title">💬 Mensagem <button class="modal-close" onclick="closeModal('modal-alerta')">×</button></div>
+    <div id="alerta-info" style="background:var(--accent-light);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--text2)"></div>
+    <div class="form-group">
+      <label>Mensagem (editável)</label>
+      <textarea id="alerta-msg" rows="5" style="resize:vertical;font-size:14px;line-height:1.5"></textarea>
+    </div>
+    <button class="btn btn-green" id="btn-wpp-alerta" onclick="enviarWpp('alerta')" style="width:100%">
+      📲 Abrir no WhatsApp
+    </button>
   </div>
 </div>
 
@@ -680,15 +750,95 @@ const FIXOS_BASE = [
 let currentYear = 2026;
 let currentTipo = 'rec';
 let customEntries = JSON.parse(localStorage.getItem('cl_custom')||'{}');
-let customAnivs = JSON.parse(localStorage.getItem('cl_anivs')||'[]');
-let custoItens = JSON.parse(localStorage.getItem('cl_custo')||JSON.stringify(CUSTO_BASE));
-let fixosItens = JSON.parse(localStorage.getItem('cl_fixos')||JSON.stringify(FIXOS_BASE));
+let customAnivs   = JSON.parse(localStorage.getItem('cl_anivs')||'[]');
+let custoItens    = JSON.parse(localStorage.getItem('cl_custo')||JSON.stringify(CUSTO_BASE));
+let fixosItens    = JSON.parse(localStorage.getItem('cl_fixos')||JSON.stringify(FIXOS_BASE));
+let ultimasSessoes= JSON.parse(localStorage.getItem('cl_sessoes')||'{}'); // {nome: {data, tipo}}
 
 function save() {
-  localStorage.setItem('cl_custom', JSON.stringify(customEntries));
-  localStorage.setItem('cl_anivs', JSON.stringify(customAnivs));
-  localStorage.setItem('cl_custo', JSON.stringify(custoItens));
-  localStorage.setItem('cl_fixos', JSON.stringify(fixosItens));
+  localStorage.setItem('cl_custom',   JSON.stringify(customEntries));
+  localStorage.setItem('cl_anivs',    JSON.stringify(customAnivs));
+  localStorage.setItem('cl_custo',    JSON.stringify(custoItens));
+  localStorage.setItem('cl_fixos',    JSON.stringify(fixosItens));
+  localStorage.setItem('cl_sessoes',  JSON.stringify(ultimasSessoes));
+}
+
+// ── ALERTAS ──
+const DIAS_ALERTA_SESSAO  = 45;  // sem sessão há X dias
+const DIAS_ALERTA_PACOTE  = 30;  // pacote expirado há X dias
+
+function salvarUltimaSessao() {
+  const nome = document.getElementById('alerta-cliente').value.trim();
+  const data = document.getElementById('alerta-data-sessao').value;
+  const tipo = document.getElementById('alerta-tipo-sessao').value;
+  if(!nome||!data){notif('⚠️ Preencha cliente e data');return;}
+  ultimasSessoes[nome.toLowerCase()]={data,tipo,nomeOriginal:nome};
+  save();
+  document.getElementById('alerta-cliente').value='';
+  document.getElementById('alerta-data-sessao').value='';
+  notif('✅ Sessão registrada!');
+  renderAlertas();
+}
+
+function renderAlertas() {
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const todos = [...ANIVERSARIOS_BASE, ...customAnivs];
+
+  const semSessao=[], pacotePendente=[];
+
+  // clientes registrados
+  for(const [key,s] of Object.entries(ultimasSessoes)) {
+    const dt = new Date(s.data+'T12:00:00');
+    const dias = Math.round((hoje-dt)/(1000*60*60*24));
+    const cliente = todos.find(c=>c.nome.toLowerCase()===key)||{nome:s.nomeOriginal,wpp:''};
+    if(s.tipo==='pacote' && dias>DIAS_ALERTA_PACOTE) {
+      pacotePendente.push({...cliente,dias,data:s.data});
+    } else if(s.tipo==='sessao' && dias>DIAS_ALERTA_SESSAO) {
+      semSessao.push({...cliente,dias,data:s.data});
+    }
+  }
+
+  // clientes sem nenhum registro
+  const registrados = new Set(Object.keys(ultimasSessoes));
+  todos.filter(c=>!registrados.has(c.nome.toLowerCase())).forEach(c=>{
+    semSessao.push({...c,dias:null,data:null});
+  });
+
+  const alertaEl = document.getElementById('alertas-list');
+  alertaEl.innerHTML = semSessao.length ? semSessao.map(c=>alertaCard(c,'sessao')).join('') :
+    '<div class="empty">Todos os clientes com sessão recente 🎉</div>';
+
+  const pacoteEl = document.getElementById('pacotes-list');
+  pacoteEl.innerHTML = pacotePendente.length ? pacotePendente.map(c=>alertaCard(c,'pacote')).join('') :
+    '<div class="empty">Nenhum pacote pendente 🎉</div>';
+}
+
+function alertaCard(c,tipo) {
+  const diasTxt = c.dias!=null ? `há ${c.dias} dias` : 'sem registro';
+  const cor = c.dias>60||c.dias==null ? 'var(--red)' : 'var(--accent2)';
+  const msgPadrao = tipo==='pacote'
+    ? `Olá ${c.nome}! 😊\nTudo bem? Seu pacote CL Relaxamente está próximo do vencimento!\nQue tal renovarmos e você continuar cuidando de você? 🌸\nMe chame para agendarmos! 💆‍♀️`
+    : `Olá ${c.nome}! 😊\nFaz um tempinho que não te vejo por aqui! Estou com horários disponíveis e adoraria cuidar de você novamente. 💆‍♀️\nQue tal agendarmos uma sessão? 🌸`;
+  return `<div class="custo-row" style="align-items:flex-start;padding:12px 0">
+    <div style="flex:1">
+      <div style="font-weight:700;font-size:14px">${c.nome}</div>
+      <div style="font-size:11px;color:${cor};margin-top:2px">⏱ Última sessão: ${diasTxt}</div>
+      ${c.data?`<div style="font-size:11px;color:var(--muted)">${new Date(c.data+'T12:00:00').toLocaleDateString('pt-BR')}</div>`:''}
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      ${c.wpp?`<button onclick="abrirMsgAlerta('${c.nome}','${c.wpp}',\`${msgPadrao.replace(/`/g,"'")}\`)"
+        style="background:var(--green);color:white;border:none;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:16px" title="WhatsApp">📲</button>`
+      :'<span style="font-size:11px;color:var(--muted)">sem wpp</span>'}
+    </div>
+  </div>`;
+}
+
+function abrirMsgAlerta(nome, wpp, msgPadrao) {
+  document.getElementById('modal-alerta-title').innerHTML=`💬 Mensagem para ${nome} <button class="modal-close" onclick="closeModal('modal-alerta')">×</button>`;
+  document.getElementById('alerta-info').innerHTML=`📱 <strong>${nome}</strong> · ${wpp}`;
+  document.getElementById('alerta-msg').value=msgPadrao;
+  document.getElementById('btn-wpp-alerta').dataset.wpp=wpp;
+  openModal('modal-alerta');
 }
 
 function getMesData(ano, mes) {
@@ -730,12 +880,13 @@ function goPage(id) {
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   const btns = document.querySelectorAll('.nav-btn');
-  const idx = ['inicio','grafico','aniversarios','custo'].indexOf(id);
+  const idx = ['inicio','grafico','aniversarios','alertas','custo'].indexOf(id);
   if(idx>=0) btns[idx].classList.add('active');
   closeFab();
   if(id==='inicio') renderInicio();
   if(id==='grafico') renderGrafico();
   if(id==='aniversarios') renderAniversarios();
+  if(id==='alertas') renderAlertas();
   if(id==='custo') renderCusto();
 }
 
@@ -1006,64 +1157,144 @@ function hideTooltip() {
 
 // ── ANIVERSÁRIOS ──
 function renderAniversarios() {
-  const todos = [...ANIVERSARIOS_BASE, ...customAnivs];
+  const todos = [...ANIVERSARIOS_BASE.map((c,i)=>({...c,_base:true,_idx:i})),
+                 ...customAnivs.map((c,i)=>({...c,_base:false,_idx:i}))];
   todos.sort((a,b)=>{
-    const [da,ma] = a.aniv.split('/').map(Number);
-    const [db,mb] = b.aniv.split('/').map(Number);
-    return ma!==mb ? ma-mb : da-db;
+    const [da,ma]=a.aniv.split('/').map(Number);
+    const [db,mb]=b.aniv.split('/').map(Number);
+    return ma!==mb?ma-mb:da-db;
   });
-
   document.getElementById('total-clientes').textContent = todos.length;
 
   const hoje = new Date();
-  const todayMD = hoje.getMonth()*100 + hoje.getDate();
+  const todayMD = hoje.getMonth()*100+hoje.getDate();
   const withDays = todos.map(c=>{
-    const [d,m] = c.aniv.split('/').map(Number);
-    let md = (m-1)*100+d;
-    let diff = md - todayMD;
-    if(diff < -3) diff += 1200; // próximo ano
-    return {...c, diff};
+    const [d,m]=c.aniv.split('/').map(Number);
+    let md=(m-1)*100+d, diff=md-todayMD;
+    if(diff<-3) diff+=1200;
+    return {...c,diff};
   });
   withDays.sort((a,b)=>a.diff-b.diff);
 
-  const prox = withDays.find(c=>c.diff>=0);
-  if(prox) {
+  const prox=withDays.find(c=>c.diff>=0);
+  if(prox){
     document.getElementById('prox-aniv-card').style.display='block';
-    document.getElementById('prox-aniv-nome').textContent = prox.nome;
-    document.getElementById('prox-aniv-data').textContent = prox.aniv + (prox.diff===0?' — HOJE! 🎉':prox.diff<=7?` — em ${prox.diff} dias`:'');
+    document.getElementById('prox-aniv-nome').textContent=prox.nome;
+    document.getElementById('prox-aniv-data').textContent=prox.aniv+(prox.diff===0?' — HOJE! 🎉':prox.diff<=7?` — em ${prox.diff} dias`:'');
   }
 
   document.getElementById('clientes-list').innerHTML = withDays.map(c=>{
-    const near = c.diff>=0 && c.diff<=7;
-    const ini = c.nome.charAt(0).toUpperCase();
+    const near=c.diff>=0&&c.diff<=7;
+    const ini=c.nome.charAt(0).toUpperCase();
+    const wppBtn=c.wpp?`<button onclick="enviarWppAniv(${JSON.stringify(c).replace(/"/g,'&quot;')})"
+      style="background:var(--green);color:white;border:none;border-radius:8px;padding:6px 10px;font-size:18px;cursor:pointer;margin-left:6px" title="WhatsApp">📲</button>`:'';
+    const editBtn=`<button onclick="abrirModalAniv(${c._base?-1:c._idx},${c._base})"
+      style="background:var(--accent-light);color:var(--accent);border:none;border-radius:8px;padding:6px 10px;font-size:15px;cursor:pointer" title="Editar">✏️</button>`;
     return `<div class="client-card">
       <div class="client-avatar">${ini}</div>
-      <div class="client-info">
+      <div class="client-info" style="flex:1">
         <div class="client-name">${c.nome}${near?'<span class="near-badge">EM BREVE</span>':''}</div>
         <div class="client-meta">${[c.condo,c.cidade].filter(Boolean).join(' · ')||'—'}</div>
+        ${c.wpp?`<div style="font-size:11px;color:var(--muted)">📱 ${c.wpp}</div>`:''}
       </div>
-      <div class="client-aniv">🗓 ${c.aniv}</div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <div class="client-aniv">🗓 ${c.aniv}</div>
+        ${editBtn}${wppBtn}
+      </div>
     </div>`;
   }).join('');
+
+  // atualiza datalist de alertas
+  const dl = document.getElementById('lista-clientes-datalist');
+  if(dl) dl.innerHTML = withDays.map(c=>`<option value="${c.nome}">`).join('');
+}
+
+function abrirModalAniv(idx, isBase=false) {
+  document.getElementById('aniv-idx').value = isBase ? `base_${idx}` : idx;
+  const todosCustom = customAnivs;
+  const preenche = (c) => {
+    document.getElementById('aniv-nome').value  = c.nome||'';
+    document.getElementById('aniv-data').value  = c.aniv ? anivToInput(c.aniv) : '';
+    document.getElementById('aniv-wpp').value   = c.wpp||'';
+    document.getElementById('aniv-cidade').value= c.cidade||'';
+    document.getElementById('aniv-condo').value = c.condo||'';
+  };
+  if(idx===-1) {
+    // novo
+    document.getElementById('modal-aniv-title').innerHTML='➕ Novo Cliente <button class="modal-close" onclick="closeModal(\'modal-aniv\')">×</button>';
+    preenche({});
+    document.getElementById('btn-del-aniv').style.display='none';
+  } else if(isBase) {
+    const c = ANIVERSARIOS_BASE[idx];
+    document.getElementById('modal-aniv-title').innerHTML=`✏️ Editar ${c.nome} <button class="modal-close" onclick="closeModal('modal-aniv')">×</button>`;
+    preenche(c);
+    document.getElementById('aniv-idx').value = `base_${idx}`;
+    document.getElementById('btn-del-aniv').style.display='none'; // base não pode excluir
+  } else {
+    const c = todosCustom[idx];
+    document.getElementById('modal-aniv-title').innerHTML=`✏️ Editar ${c.nome} <button class="modal-close" onclick="closeModal('modal-aniv')">×</button>`;
+    preenche(c);
+    document.getElementById('btn-del-aniv').style.display='';
+  }
+  openModal('modal-aniv');
+}
+
+function anivToInput(aniv) {
+  // "DD/MM" → "2000-MM-DD"
+  const [d,m]=aniv.split('/');
+  return `2000-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
 }
 
 function salvarAniversario() {
-  const nome = document.getElementById('aniv-nome').value.trim();
-  const dataRaw = document.getElementById('aniv-data').value;
+  const nome   = document.getElementById('aniv-nome').value.trim();
+  const dataRaw= document.getElementById('aniv-data').value;
+  const wpp    = document.getElementById('aniv-wpp').value.replace(/\D/g,'');
   const cidade = document.getElementById('aniv-cidade').value.trim();
-  const condo = document.getElementById('aniv-condo').value.trim();
+  const condo  = document.getElementById('aniv-condo').value.trim();
   if(!nome||!dataRaw){notif('⚠️ Nome e data obrigatórios');return;}
-  const dt = new Date(dataRaw+'T12:00:00');
-  const aniv = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
-  customAnivs.push({nome,aniv,cidade,condo});
+  const dt=new Date(dataRaw+'T12:00:00');
+  const aniv=`${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
+  const idxRaw=document.getElementById('aniv-idx').value;
+  const obj={nome,aniv,wpp,cidade,condo};
+  if(idxRaw==='' || idxRaw==='-1') {
+    customAnivs.push(obj);
+  } else if(idxRaw.startsWith('base_')) {
+    // editar base: promove para custom sobrescrevendo
+    const bi=parseInt(idxRaw.replace('base_',''));
+    // apenas salva como custom extra (não remove base)
+    customAnivs.push(obj);
+  } else {
+    customAnivs[parseInt(idxRaw)]=obj;
+  }
   save();
   closeModal('modal-aniv');
-  document.getElementById('aniv-nome').value='';
-  document.getElementById('aniv-data').value='';
-  document.getElementById('aniv-cidade').value='';
-  document.getElementById('aniv-condo').value='';
-  notif('🎂 Aniversário cadastrado!');
+  notif('✅ Cliente salvo!');
   renderAniversarios();
+}
+
+function deletarAniversario() {
+  const idxRaw=document.getElementById('aniv-idx').value;
+  if(!idxRaw||idxRaw.startsWith('base_')) return;
+  customAnivs.splice(parseInt(idxRaw),1);
+  save();
+  closeModal('modal-aniv');
+  notif('🗑 Cliente removido');
+  renderAniversarios();
+}
+
+function enviarWppAniv(c) {
+  if(!c.wpp){notif('⚠️ WhatsApp não cadastrado');return;}
+  const [d,m]=c.aniv.split('/');
+  const msg=`Olá ${c.nome}! 🎂✨\nA equipe CL Relaxamente deseja um feliz aniversário! 🌸\nQue seu dia seja especial e cheio de alegria. Temos um mimo especial esperando por você! 💆‍♀️\nAté breve! 💛`;
+  const url=`https://wa.me/55${c.wpp}?text=${encodeURIComponent(msg)}`;
+  window.open(url,'_blank');
+}
+
+function enviarWpp(tipo) {
+  const msg=document.getElementById('alerta-msg').value;
+  const wpp=document.getElementById('btn-wpp-alerta').dataset.wpp;
+  if(!wpp){notif('⚠️ WhatsApp não cadastrado para este cliente');return;}
+  window.open(`https://wa.me/55${wpp}?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
 // ── CUSTO ──
@@ -1075,8 +1306,8 @@ function renderCusto() {
         <div>${it.nome}</div>
         <div class="custo-sub">R$ ${it.preco.toFixed(2)} ÷ ${it.rend} sessões</div>
       </div>
-      <span style="color:var(--text2);font-size:13px;margin-right:8px">R$ ${(it.preco/it.rend).toFixed(2)}</span>
-      <button class="delete-btn" onclick="removerItemCusto(${i})">✕</button>
+      <span style="color:var(--text2);font-size:13px;margin-right:4px">R$ ${(it.preco/it.rend).toFixed(2)}</span>
+      <button class="delete-btn" style="color:var(--accent);font-size:16px" onclick="editarItemCusto(${i})">✏️</button>
     </div>`).join('');
 
   const fixosEl = document.getElementById('fixos-list');
@@ -1110,28 +1341,50 @@ function calcCusto() {
   document.getElementById('lucro-sessao').style.color = lucro>=0?'var(--green)':'var(--red)';
 }
 
-function addItemCusto() { openModal('modal-item-custo'); }
+function addItemCusto() { editarItemCusto(-1); }
+
+function editarItemCusto(i) {
+  document.getElementById('ci-idx').value = i;
+  if(i===-1) {
+    document.getElementById('modal-custo-title').innerHTML='🧴 Novo Item <button class="modal-close" onclick="closeModal(\'modal-item-custo\')">×</button>';
+    document.getElementById('ci-nome').value='';
+    document.getElementById('ci-preco').value='';
+    document.getElementById('ci-rend').value='';
+    document.getElementById('btn-del-custo').style.display='none';
+  } else {
+    const it=custoItens[i];
+    document.getElementById('modal-custo-title').innerHTML=`✏️ Editar Item <button class="modal-close" onclick="closeModal('modal-item-custo')">×</button>`;
+    document.getElementById('ci-nome').value=it.nome;
+    document.getElementById('ci-preco').value=it.preco;
+    document.getElementById('ci-rend').value=it.rend;
+    document.getElementById('btn-del-custo').style.display='';
+  }
+  openModal('modal-item-custo');
+}
 
 function salvarItemCusto() {
-  const nome = document.getElementById('ci-nome').value.trim();
+  const nome  = document.getElementById('ci-nome').value.trim();
   const preco = parseFloat(document.getElementById('ci-preco').value);
-  const rend = parseFloat(document.getElementById('ci-rend').value);
+  const rend  = parseFloat(document.getElementById('ci-rend').value);
+  const idx   = parseInt(document.getElementById('ci-idx').value);
   if(!nome||!preco||!rend){notif('⚠️ Preencha todos os campos');return;}
-  custoItens.push({nome,preco,rend});
+  if(idx===-1) custoItens.push({nome,preco,rend});
+  else custoItens[idx]={nome,preco,rend};
   save();
   closeModal('modal-item-custo');
-  document.getElementById('ci-nome').value='';
-  document.getElementById('ci-preco').value='';
-  document.getElementById('ci-rend').value='';
-  notif('✅ Item adicionado!');
+  notif('✅ Item salvo!');
   renderCusto();
 }
 
-function removerItemCusto(i) {
-  custoItens.splice(i,1);
-  save();
+function removerItemCustoModal() {
+  const idx=parseInt(document.getElementById('ci-idx').value);
+  if(idx>=0){ custoItens.splice(idx,1); save(); }
+  closeModal('modal-item-custo');
+  notif('🗑 Item removido');
   renderCusto();
 }
+
+function removerItemCusto(i) { editarItemCusto(i); } // legacy → abre modal
 
 function editarFixo(i) {
   if(i===-1) {
