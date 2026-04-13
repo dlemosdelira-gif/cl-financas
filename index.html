@@ -76,6 +76,10 @@ input:focus, select:focus { border-color: var(--accent); }
 .btn-accent { background: var(--accent); color: white; }
 .btn-outline { background: white; color: var(--text2); border: 1.5px solid var(--border); }
 
+.sort-bar { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+.sort-btn { padding:5px 12px; border-radius:16px; border:1.5px solid var(--border); background:white; color:var(--text2); font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; }
+.sort-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+
 .client-card { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
 .client-card:last-child { border-bottom: none; }
 .client-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-light); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0; }
@@ -264,8 +268,11 @@ input:focus, select:focus { border-color: var(--accent); }
 
 <div class="bar-tooltip" id="bar-tooltip"></div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script>
-const firebaseConfig = {
   apiKey: "AIzaSyB3djlJJ5GxYum2kO7-O55Zp5n4ZmWf3mA",
   authDomain: "spacl-c32e6.firebaseapp.com",
   projectId: "spacl-c32e6",
@@ -375,9 +382,17 @@ window.openModal = function(id) { document.getElementById(id).classList.add('ope
 window.closeModal = function(id) { document.getElementById(id).classList.remove('open'); };
 window.closeModalOutside = function(e,id) { if(e.target.id===id) window.closeModal(id); };
 
+window._db = null; // Firebase db reference, set on init
+
 window.saveData = function() {
-  try { db.ref('data').set({ customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes }); }
-  catch(e) { console.warn("Firebase não salvou", e); }
+  // Always save to localStorage as backup
+  try {
+    localStorage.setItem('cl_data', JSON.stringify({ customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes }));
+  } catch(e) {}
+  // Also save to Firebase if connected
+  try {
+    if(window._db) window._db.ref('data').set({ customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes });
+  } catch(e) { console.warn("Firebase não salvou", e); }
 };
 
 window.getMesData = function(ano, mes) {
@@ -412,27 +427,90 @@ window.renderInicio = function() {
   }).join('');
 };
 
+window._sortMode = 'data-desc';
+
+window._parseDate = function(dStr, ano, mes) {
+  if(!dStr || dStr==='—') return new Date(0);
+  const parts = dStr.split('/');
+  if(parts.length < 2) return new Date(0);
+  return new Date(ano, parseInt(parts[1])-1, parseInt(parts[0]));
+};
+
+window._sortEntries = function(arr, ano, mes, mode) {
+  const copy = [...arr];
+  if     (mode==='data-desc')  copy.sort((a,b)=>window._parseDate(b.d,ano,mes)-window._parseDate(a.d,ano,mes));
+  else if(mode==='data-asc')   copy.sort((a,b)=>window._parseDate(a.d,ano,mes)-window._parseDate(b.d,ano,mes));
+  else if(mode==='valor-desc') copy.sort((a,b)=>Math.abs(b.v)-Math.abs(a.v));
+  else if(mode==='valor-asc')  copy.sort((a,b)=>Math.abs(a.v)-Math.abs(b.v));
+  return copy;
+};
+
+window._renderSortBar = function(mes) {
+  const modes = [
+    {k:'data-desc',  label:'📅 Mais recente'},
+    {k:'data-asc',   label:'📅 Mais antiga'},
+    {k:'valor-desc', label:'💲 Maior valor'},
+    {k:'valor-asc',  label:'💲 Menor valor'},
+  ];
+  return `<div class="sort-bar">${modes.map(m=>`<button class="sort-btn ${window._sortMode===m.k?'active':''}" onclick="setSortMode('${m.k}','${mes}')">${m.label}</button>`).join('')}</div>`;
+};
+
+window.setSortMode = function(mode, mes) {
+  window._sortMode = mode;
+  window.showDetail(mes);
+};
+
 window.navMonth = function(dir) {
   let idx = MESES.indexOf(window.currentDetailMonth);
   let newIdx = idx + dir;
-  if (newIdx < 0) newIdx = 11;
-  if (newIdx > 11) newIdx = 0;
+  if(newIdx < 0) newIdx = 11;
+  if(newIdx > 11) newIdx = 0;
   window.showDetail(MESES[newIdx]);
 };
 
 window.showDetail = function(mes) {
   window.currentDetailMonth = mes;
-  document.getElementById('month-list-wrap').style.display='none'; document.getElementById('kpis').style.display='none'; document.getElementById('year-bar').style.display='none'; document.getElementById('detail-view').style.display='block';
-  const d = window.getMesData(currentYear, mes), sobra = d.rec+d.desp;
-  const renderRow = (e, isPos) => `<div class="entry-row"><span class="entry-date">${e.d}</span><span class="entry-det">${e.det}</span><span class="entry-val ${isPos?'pos':'neg'}">${window.fmt(e.v)}</span><div>${e.id?`<button class="delete-btn edit-btn" onclick="editEntry('${currentYear}_${mes}',${e.id})">✏️</button><button class="delete-btn" onclick="deleteEntry('${currentYear}_${mes}',${e.id})">✕</button>`:''}</div></div>`;
-  
+  document.getElementById('month-list-wrap').style.display='none';
+  document.getElementById('kpis').style.display='none';
+  document.getElementById('year-bar').style.display='none';
+  document.getElementById('detail-view').style.display='block';
+
+  const d = window.getMesData(currentYear, mes);
+
+  const renderRow = (e, isPos) =>
+    `<div class="entry-row">
+      <span class="entry-date">${e.d}</span>
+      <span class="entry-det">${e.det}</span>
+      <span class="entry-val ${isPos?'pos':'neg'}">${window.fmt(e.v)}</span>
+      <div>${e.id
+        ? `<button class="delete-btn edit-btn" onclick="editEntry('${currentYear}_${mes}',${e.id})">✏️</button><button class="delete-btn" onclick="deleteEntry('${currentYear}_${mes}',${e.id})">✕</button>`
+        : ''}</div>
+    </div>`;
+
+  const sortedEntradas = window._sortEntries(d.entradas, currentYear, mes, window._sortMode);
+  const sortedSaidas   = window._sortEntries(d.saidas,   currentYear, mes, window._sortMode);
+
   document.getElementById('detail-content').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;background:var(--surface);padding:8px 14px;border-radius:var(--radius);box-shadow:var(--shadow);">
       <button onclick="navMonth(-1)" style="background:none;border:none;font-size:22px;color:var(--accent);cursor:pointer;padding:0 15px;">❮</button>
       <span style="font-weight:700;font-size:15px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;">${MESES_FULL[mes]}</span>
       <button onclick="navMonth(1)" style="background:none;border:none;font-size:22px;color:var(--accent);cursor:pointer;padding:0 15px;">❯</button>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:14px"><div class="kpi kpi-green" style="flex:1"><div class="kpi-label">Receitas</div><div class="kpi-value green" style="font-size:16px">${window.fmt(d.rec)}</div></div><div class="kpi kpi-red" style="flex:1"><div class="kpi-label">Despesas</div><div class="kpi-value red" style="font-size:16px">${window.fmt(Math.abs(d.desp))}</div></div></div><div class="card" style="padding:14px"><div class="section-head green"><span>💰 Receitas</span><span>${window.fmt(d.rec)}</span></div>${d.entradas.length ? d.entradas.map(e=>renderRow(e,true)).join('') : '<div class="empty">Sem receitas</div>'}</div><div class="card" style="padding:14px"><div class="section-head red"><span>💸 Despesas</span><span>${window.fmt(Math.abs(d.desp))}</span></div>${d.saidas.length ? d.saidas.map(e=>renderRow(e,false)).join('') : '<div class="empty">Sem despesas</div>'}</div>`;
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div class="kpi kpi-green" style="flex:1"><div class="kpi-label">Receitas</div><div class="kpi-value green" style="font-size:16px">${window.fmt(d.rec)}</div></div>
+      <div class="kpi kpi-red" style="flex:1"><div class="kpi-label">Despesas</div><div class="kpi-value red" style="font-size:16px">${window.fmt(Math.abs(d.desp))}</div></div>
+    </div>
+    ${window._renderSortBar(mes)}
+    <div class="card" style="padding:14px">
+      <div class="section-head green"><span>💰 Receitas</span><span>${window.fmt(d.rec)}</span></div>
+      ${sortedEntradas.length ? sortedEntradas.map(e=>renderRow(e,true)).join('') : '<div class="empty">Sem receitas</div>'}
+    </div>
+    <div class="card" style="padding:14px">
+      <div class="section-head red"><span>💸 Despesas</span><span>${window.fmt(Math.abs(d.desp))}</span></div>
+      ${sortedSaidas.length ? sortedSaidas.map(e=>renderRow(e,false)).join('') : '<div class="empty">Sem despesas</div>'}
+    </div>
+  `;
+};
 };
 window.closeDetail = function() { document.getElementById('month-list-wrap').style.display=''; document.getElementById('kpis').style.display=''; document.getElementById('year-bar').style.display=''; document.getElementById('detail-view').style.display='none'; };
 
@@ -543,29 +621,70 @@ window.deletarFixo = function() { const idx = parseInt(document.getElementById('
 
 // INICIALIZAÇÃO E FIREBASE
 window.onload = function() {
-  window.renderInicio();
+  // 1. Carrega localStorage imediatamente (sem depender de rede)
   try {
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    db.ref('data').on('value', (snapshot) => {
-      if (snapshot.exists()) {
+    const local = localStorage.getItem('cl_data');
+    if(local) {
+      const val = JSON.parse(local);
+      customEntries  = val.customEntries  || {};
+      customAnivs    = val.customAnivs    || [];
+      if(val.custoItens)  custoItens  = val.custoItens;
+      if(val.fixosItens)  fixosItens  = val.fixosItens;
+      ultimasSessoes = val.ultimasSessoes || {};
+    }
+  } catch(e) {}
+
+  // 2. Renderiza imediatamente com os dados disponíveis
+  window.renderInicio();
+
+  // 3. Tenta conectar ao Firebase em paralelo (complementa sem bloquear)
+  try {
+    if(typeof firebase !== 'undefined') {
+      const app = firebase.initializeApp(firebaseConfig);
+      const db  = firebase.database();
+      window._db = db;
+
+      db.ref('data').once('value').then((snapshot) => {
+        if(snapshot.exists()) {
+          const val = snapshot.val();
+          // Merge: Firebase tem prioridade sobre localStorage
+          customEntries  = val.customEntries  || customEntries;
+          customAnivs    = val.customAnivs    || customAnivs;
+          if(val.custoItens)  custoItens  = val.custoItens;
+          if(val.fixosItens)  fixosItens  = val.fixosItens;
+          ultimasSessoes = val.ultimasSessoes || ultimasSessoes;
+          // Atualiza localStorage com versão mais recente do Firebase
+          localStorage.setItem('cl_data', JSON.stringify({ customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes }));
+        }
+        // Re-renderiza com dados do Firebase
+        const activePage = document.querySelector('.page.active')?.id;
+        if(activePage==='page-inicio')       window.renderInicio();
+        else if(activePage==='page-grafico') window.renderGrafico();
+        else if(activePage==='page-aniversarios') window.renderAniversarios();
+        else if(activePage==='page-alertas') window.renderAlertas();
+        else if(activePage==='page-custo')   window.renderCusto();
+      }).catch(err => console.warn("Firebase leitura falhou, usando dados locais:", err));
+
+      // Escuta mudanças em tempo real após o carregamento inicial
+      db.ref('data').on('value', (snapshot) => {
+        if(!snapshot.exists()) return;
         const val = snapshot.val();
-        customEntries = val.customEntries || {};
-        customAnivs = val.customAnivs || [];
-        if(val.custoItens) custoItens = val.custoItens;
-        if(val.fixosItens) fixosItens = val.fixosItens;
+        customEntries  = val.customEntries  || {};
+        customAnivs    = val.customAnivs    || [];
+        if(val.custoItens)  custoItens  = val.custoItens;
+        if(val.fixosItens)  fixosItens  = val.fixosItens;
         ultimasSessoes = val.ultimasSessoes || {};
-        
-        const activePage = document.querySelector('.page.active').id;
-        if(activePage === 'page-inicio') window.renderInicio();
-        else if(activePage === 'page-grafico') window.renderGrafico();
-        else if(activePage === 'page-aniversarios') window.renderAniversarios();
-        else if(activePage === 'page-alertas') window.renderAlertas();
-        else if(activePage === 'page-custo') window.renderCusto();
-      }
-    });
-  } catch (err) {
-    console.error("Firebase carregará os dados base apenas. Erro:", err);
+        localStorage.setItem('cl_data', JSON.stringify({ customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes }));
+        const activePage = document.querySelector('.page.active')?.id;
+        if(activePage==='page-inicio')       window.renderInicio();
+        else if(activePage==='page-grafico') window.renderGrafico();
+        else if(activePage==='page-aniversarios') window.renderAniversarios();
+        else if(activePage==='page-alertas') window.renderAlertas();
+        else if(activePage==='page-custo')   window.renderCusto();
+      });
+    }
+  } catch(err) {
+    console.warn("Firebase indisponível, modo offline ativo:", err);
   }
 };
 </script>
