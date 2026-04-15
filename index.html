@@ -2,7 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spa CL">
+<meta name="theme-color" content="#8b5e3c">
 <title>Spa Carla Lira · DRE</title>
 <style>
 :root {
@@ -14,8 +18,9 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; }
 
-nav { background: var(--accent); padding: 0; display: flex; justify-content: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
-.nav-btn { flex: 1; max-width: 100px; padding: 12px 4px 10px; background: none; border: none; cursor: pointer; color: rgba(255,255,255,.65); font-size: 11px; font-weight: 600; text-align: center; line-height: 1.3; border-bottom: 3px solid transparent; transition: all .15s; }
+nav { background: var(--accent); padding: 0; display: flex; justify-content: center; align-items: stretch; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.nav-inner { display: flex; justify-content: center; width: 100%; max-width: 640px; margin: 0 auto; }
+.nav-btn { flex: 1; padding: 12px 4px 10px; background: none; border: none; cursor: pointer; color: rgba(255,255,255,.65); font-size: 11px; font-weight: 600; text-align: center; line-height: 1.3; border-bottom: 3px solid transparent; transition: all .15s; }
 .nav-btn .ico { font-size: 20px; display: block; margin-bottom: 2px; }
 .nav-btn.active { color: #fff; border-bottom-color: var(--accent2); }
 .nav-btn:hover { color: #fff; }
@@ -23,6 +28,7 @@ nav { background: var(--accent); padding: 0; display: flex; justify-content: cen
 .page-header { background: var(--accent); color: white; padding: 20px 16px 16px; text-align: center; position: relative; }
 .page-header h1 { font-size: 22px; font-weight: 700; letter-spacing: .3px; }
 .page-header p { font-size: 13px; opacity: .75; margin-top: 3px; }
+.page-header-inner { max-width: 640px; margin: 0 auto; position: relative; }
 .eye-btn { position: absolute; top: 20px; right: 20px; background: none; border: none; color: white; font-size: 24px; cursor: pointer; opacity: 0.9; transition: opacity 0.2s; }
 .eye-btn:hover { opacity: 1; }
 
@@ -109,25 +115,52 @@ input:focus, select:focus { border-color: var(--accent); }
 .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
 .bar-labels-row { display: flex; gap: 3px; margin-top: 6px; }
 .bar-label-item { flex: 1; text-align: center; font-size: 9px; color: var(--muted); }
+
+/* ── RESPONSIVE: desktop two-column layout ── */
+@media (min-width: 768px) {
+  body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  .page-header { flex-shrink: 0; }
+  nav { flex-shrink: 0; justify-content: flex-start; padding: 0 8px; }
+  .nav-btn { max-width: 140px; padding: 14px 16px 12px; font-size: 13px; }
+  .nav-btn .ico { font-size: 22px; }
+  #main-content { flex: 1; overflow-y: auto; }
+  .page { max-width: 800px; padding: 24px 32px; }
+  .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+  .modal { border-radius: 18px; max-width: 560px; margin: auto; }
+  .modal-overlay { align-items: center; }
+  .fab { bottom: 32px; right: 32px; }
+}
+/* ── mobile: add bottom padding so FAB doesn't cover content ── */
+@media (max-width: 767px) {
+  #main-content { padding-bottom: 80px; }
+}
 </style>
 
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 </head>
 <body>
 
 <div class="page-header">
-  <h1>💆 Spa Carla Lira</h1>
-  <p>Controle Financeiro</p>
-  <button onclick="toggleValues()" id="eye-icon" class="eye-btn" title="Esconder/Mostrar Valores">🙈</button>
+  <div class="page-header-inner">
+    <h1>💆 Spa Carla Lira</h1>
+    <p>Controle Financeiro</p>
+    <button onclick="toggleValues()" id="eye-icon" class="eye-btn" title="Esconder/Mostrar Valores">🙈</button>
+  </div>
 </div>
 
 <nav>
-  <button class="nav-btn active" onclick="goPage('inicio')"><span class="ico">🏠</span>Início</button>
-  <button class="nav-btn" onclick="goPage('grafico')"><span class="ico">📊</span>Gráfico</button>
-  <button class="nav-btn" onclick="goPage('aniversarios')"><span class="ico">🎂</span>Anivs.</button>
-  <button class="nav-btn" onclick="goPage('alertas')"><span class="ico">🔔</span>Alertas</button>
-  <button class="nav-btn" onclick="goPage('custo')"><span class="ico">🧴</span>Custo</button>
+  <div class="nav-inner">
+    <button class="nav-btn active" onclick="goPage('inicio')"><span class="ico">🏠</span>Início</button>
+    <button class="nav-btn" onclick="goPage('grafico')"><span class="ico">📊</span>Gráfico</button>
+    <button class="nav-btn" onclick="goPage('aniversarios')"><span class="ico">🎂</span>Anivs.</button>
+    <button class="nav-btn" onclick="goPage('alertas')"><span class="ico">🔔</span>Alertas</button>
+    <button class="nav-btn" onclick="goPage('custo')"><span class="ico">🧴</span>Custo</button>
+  </div>
 </nav>
+<div id="main-content">
 
 <button class="fab" id="fab" onclick="openLancamento()">＋</button>
 <div class="notif" id="notif"></div>
@@ -270,6 +303,7 @@ input:focus, select:focus { border-color: var(--accent); }
 const firebaseConfig = {
   apiKey: "AIzaSyB3djlJJ5GxYum2kO7-O55Zp5n4ZmWf3mA",
   authDomain: "spacl-c32e6.firebaseapp.com",
+  databaseURL: "https://spacl-c32e6-default-rtdb.firebaseio.com",
   projectId: "spacl-c32e6",
   storageBucket: "spacl-c32e6.firebasestorage.app",
   messagingSenderId: "796456748135",
@@ -377,14 +411,27 @@ window.openModal = function(id) { document.getElementById(id).classList.add('ope
 window.closeModal = function(id) { document.getElementById(id).classList.remove('open'); };
 window.closeModalOutside = function(e,id) { if(e.target.id===id) window.closeModal(id); };
 
+window._db = null; // set after Firebase init
+
 window.saveData = function() {
-  try {
-    localStorage.setItem('cl_data', JSON.stringify({ customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes }));
-  } catch(e) { console.warn("localStorage falhou", e); }
+  const payload = { customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes };
+  // Always persist locally
+  try { localStorage.setItem('cl_data', JSON.stringify(payload)); } catch(e) {}
+  // Sync to Firebase when connected
+  if (window._db) {
+    try { window._db.ref('data').set(payload); } catch(e) { console.warn('Firebase write failed', e); }
+  }
 };
 
 window.getMesData = function(ano, mes) {
   const base = JSON.parse(JSON.stringify(BASE[ano]?.[mes] || {rec:0,desp:0,atend:0,entradas:[],saidas:[]}));
+  // Tag base entries with a _baseIdx so they can be edited
+  base.entradas = base.entradas.map((e,i) => ({...e, _baseKey:`${ano}_${mes}`, _baseType:'rec', _baseIdx:i}));
+  base.saidas   = base.saidas.map((e,i)   => ({...e, _baseKey:`${ano}_${mes}`, _baseType:'desp', _baseIdx:i}));
+  // Remove base entries that have been overridden by a custom entry with same _baseIdx
+  const overridden = new Set((customEntries[`${ano}_${mes}`]||[]).filter(e=>e._baseIdx!=null).map(e=>e._baseType+'_'+e._baseIdx));
+  base.entradas = base.entradas.filter(e => !overridden.has('rec_'+e._baseIdx));
+  base.saidas   = base.saidas.filter(e   => !overridden.has('desp_'+e._baseIdx));
   const extras = customEntries[`${ano}_${mes}`] || [];
   for(const e of extras) {
     if(e.tipo==='rec') { base.rec += e.valor; base.entradas.push({d:e.d,v:e.valor,det:e.det,id:e.id,isoDate:e.isoDate}); }
@@ -451,7 +498,17 @@ window.showDetail = function(mes) {
   window.currentDetailMonth = mes;
   document.getElementById('month-list-wrap').style.display='none'; document.getElementById('kpis').style.display='none'; document.getElementById('year-bar').style.display='none'; document.getElementById('detail-view').style.display='block';
   const d = window.getMesData(currentYear, mes);
-  const renderRow = (e, isPos) => `<div class="entry-row"><span class="entry-date">${e.d}</span><span class="entry-det">${e.det}</span><span class="entry-val ${isPos?'pos':'neg'}">${window.fmt(e.v)}</span><div>${e.id?`<button class="delete-btn edit-btn" onclick="editEntry('${currentYear}_${mes}',${e.id})">✏️</button><button class="delete-btn" onclick="deleteEntry('${currentYear}_${mes}',${e.id})">✕</button>`:''}</div></div>`;
+  const renderRow = (e, isPos) => {
+    let btns = '';
+    if (e.id) {
+      // Custom entry — full edit + delete
+      btns = `<button class="delete-btn edit-btn" onclick="editEntry('${currentYear}_${mes}',${e.id})">✏️</button><button class="delete-btn" onclick="deleteEntry('${currentYear}_${mes}',${e.id})">✕</button>`;
+    } else if (e._baseIdx != null) {
+      // Base entry — edit only (converts to custom on save)
+      btns = `<button class="delete-btn edit-btn" onclick="editBaseEntry('${e._baseKey}','${e._baseType}',${e._baseIdx})">✏️</button>`;
+    }
+    return `<div class="entry-row"><span class="entry-date">${e.d}</span><span class="entry-det">${e.det}</span><span class="entry-val ${isPos?'pos':'neg'}">${window.fmt(e.v)}</span><div>${btns}</div></div>`;
+  };
   const se = window._sortEntries(d.entradas, currentYear, mes, window._sortMode);
   const ss = window._sortEntries(d.saidas,   currentYear, mes, window._sortMode);
   document.getElementById('detail-content').innerHTML = `
@@ -469,7 +526,7 @@ window.closeDetail = function() { document.getElementById('month-list-wrap').sty
 
 // LANÇAMENTOS (Parcelamento e Edição)
 window.openLancamento = function() {
-  editingEntryId = null; editingEntryKey = null; window.setTipo('rec');
+  editingEntryId = null; editingEntryKey = null; window._editingBase = null; window.setTipo('rec');
   document.getElementById('f-data').valueAsDate = new Date(); document.getElementById('f-valor').value = ''; document.getElementById('f-detalhe').value = ''; document.getElementById('f-parcelas').value = '1'; document.getElementById('f-parcelas-group').style.display = 'block';
   document.getElementById('lanc-modal-title').innerHTML = `✏️ Novo Lançamento <button class="modal-close" onclick="closeModal('modal-lancamento')">×</button>`; window.openModal('modal-lancamento');
 };
@@ -491,6 +548,29 @@ window.editEntry = function(key, id) {
   document.getElementById('lanc-modal-title').innerHTML = `✏️ Editar Lançamento <button class="modal-close" onclick="closeModal('modal-lancamento')">×</button>`; window.openModal('modal-lancamento');
 };
 
+window.editBaseEntry = function(key, tipo, baseIdx) {
+  // Find the base entry to pre-fill form
+  const parts = key.split('_'); // e.g. "2026_Jan"
+  const ano = parseInt(parts[0]), mes = parts[1];
+  const baseData = BASE[ano]?.[mes];
+  const arr = tipo === 'rec' ? baseData?.entradas : baseData?.saidas;
+  const e = arr?.[baseIdx];
+  if (!e) return;
+  // Open form as a NEW custom entry that overrides the base one
+  editingEntryId = null; editingEntryKey = null;
+  window.setTipo(tipo === 'rec' ? 'rec' : 'desp');
+  // Convert DD/MM to YYYY-MM-DD using the year from key
+  const [day, month] = e.d.split('/');
+  document.getElementById('f-data').value = `${ano}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`;
+  document.getElementById('f-valor').value = Math.abs(e.v);
+  document.getElementById('f-detalhe').value = e.det;
+  document.getElementById('f-parcelas-group').style.display = 'none';
+  document.getElementById('lanc-modal-title').innerHTML = `✏️ Editar Lançamento Base <button class="modal-close" onclick="closeModal('modal-lancamento')">×</button>`;
+  // Store base info to suppress original after save
+  window._editingBase = { key, tipo, baseIdx };
+  window.openModal('modal-lancamento');
+};
+
 window.salvarLancamento = function() {
   const data = document.getElementById('f-data').value, valorRaw = parseFloat(document.getElementById('f-valor').value), det = document.getElementById('f-detalhe').value.trim().toUpperCase();
   if(!valorRaw||!det){window.notif('⚠️ Preencha valor e detalhe');return;} if(!data){window.notif('⚠️ Informe a data');return;}
@@ -507,6 +587,15 @@ window.salvarLancamento = function() {
       const dt = new Date(baseDt.getTime()); dt.setMonth(dt.getMonth() + i); const key = `${dt.getFullYear()}_${MESES[dt.getMonth()]}`;
       if(!customEntries[key]) customEntries[key] = [];
       customEntries[key].push({ id: Date.now()+i, tipo: currentTipo, d: dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}), isoDate: dt.toISOString().split('T')[0], valor: valorParcela, det: parcelas > 1 ? `${det} (${i+1}/${parcelas})` : det });
+  }
+  // If editing a base entry, mark it as overridden
+  if (window._editingBase) {
+    const { key, tipo, baseIdx } = window._editingBase;
+    if (!customEntries[key]) customEntries[key] = [];
+    // Tag the new entry with _baseIdx so getMesData can hide the original
+    customEntries[key][customEntries[key].length - 1]._baseIdx = baseIdx;
+    customEntries[key][customEntries[key].length - 1]._baseType = tipo;
+    window._editingBase = null;
   }
   window.saveData(); window.closeModal('modal-lancamento'); window.notif('✅ Lançamento salvo!'); window.renderInicio();
 };
@@ -596,9 +685,11 @@ window.onload = function() {
 
   // Tenta Firebase em segundo plano (não bloqueia nada)
   try {
-    if (typeof firebase !== 'undefined') {
-      const app = firebase.initializeApp(firebaseConfig);
-      const db  = firebase.database();
+    {
+      firebase.initializeApp({ ...firebaseConfig, databaseURL: "https://spacl-c32e6-default-rtdb.firebaseio.com" });
+      firebase.auth().signInAnonymously().catch(err => console.warn('Auth error:', err));
+      const db = firebase.database();
+      window._db = db; // expose so saveData can write
       db.ref('data').on('value', (snapshot) => {
         if (!snapshot.exists()) return;
         const val = snapshot.val();
@@ -628,5 +719,6 @@ window.onload = function() {
   }
 };
 </script>
+</div><!-- /main-content -->
 </body>
 </html>
