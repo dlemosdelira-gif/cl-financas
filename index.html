@@ -241,6 +241,18 @@ input:focus, select:focus { border-color: var(--accent); }
     <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border)"><span style="font-weight:700">Total fixos/mês</span><span style="font-weight:700;font-size:18px;color:var(--red)" id="fixos-total"></span></div>
     <div style="margin-top:6px;font-size:12px;color:var(--muted)" id="fixos-por-sessao"></div>
   </div>
+  <div class="card" style="margin-top:14px">
+    <div class="card-title">🔒 Backup de Dados</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Exporte um backup completo dos seus lançamentos. Importe para restaurar dados perdidos.</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-accent" onclick="exportarDados()" style="width:100%;padding:11px;font-size:14px">⬇️ Exportar backup (JSON)</button>
+      <label style="display:block;width:100%;padding:11px;font-size:14px;text-align:center;cursor:pointer;border-radius:var(--radius);border:2px solid var(--border);background:white;color:var(--text2);font-weight:700;box-sizing:border-box">
+        ⬆️ Importar backup (JSON)
+        <input type="file" accept=".json" style="display:none" onchange="importarDados(event)">
+      </label>
+      <div id="backup-status" style="font-size:12px;color:var(--muted);text-align:center;min-height:18px"></div>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="modal-aniv" onclick="closeModalOutside(event,'modal-aniv')">
@@ -414,12 +426,15 @@ window.closeModalOutside = function(e,id) { if(e.target.id===id) window.closeMod
 window._db = null; // set after Firebase init
 
 window.saveData = function() {
-  const payload = { customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes };
-  // Always persist locally
+  const now = new Date().toISOString();
+  const payload = { customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes, _savedAt: now };
   try { localStorage.setItem('cl_data', JSON.stringify(payload)); } catch(e) {}
-  // Sync to Firebase when connected
   if (window._db) {
-    try { window._db.ref('data').set(payload); } catch(e) { console.warn('Firebase write failed', e); }
+    try {
+      window._db.ref('data').set(payload);
+      const el = document.getElementById('backup-status');
+      if (el) el.textContent = `Sincronizado com Firebase em ${new Date(now).toLocaleString('pt-BR')}`;
+    } catch(e) { console.warn('Firebase write failed', e); }
   }
 };
 
@@ -660,6 +675,60 @@ window.removerItemCustoModal = function() { const idx=parseInt(document.getEleme
 window.editarFixo = function(i) { if(i===-1) { document.getElementById('fixo-nome').value=''; document.getElementById('fixo-valor').value=''; document.getElementById('fixo-idx').value='-1'; } else { document.getElementById('fixo-nome').value = fixosItens[i].nome; document.getElementById('fixo-valor').value = fixosItens[i].valor; document.getElementById('fixo-idx').value = i; } window.openModal('modal-fixo'); };
 window.salvarFixo = function() { const nome = document.getElementById('fixo-nome').value.trim(), valor = parseFloat(document.getElementById('fixo-valor').value), idx = parseInt(document.getElementById('fixo-idx').value); if(!nome||!valor){window.notif('⚠️ Preencha nome e valor');return;} if(idx===-1) fixosItens.push({nome,valor}); else fixosItens[idx] = {nome,valor}; window.saveData(); window.closeModal('modal-fixo'); window.notif('✅ Custo fixo salvo!'); window.renderCusto(); };
 window.deletarFixo = function() { const idx = parseInt(document.getElementById('fixo-idx').value); if(idx>=0) { fixosItens.splice(idx,1); window.saveData(); } window.closeModal('modal-fixo'); window.notif('🗑 Removido'); window.renderCusto(); };
+
+// BACKUP / RESTAURAÇÃO
+window.exportarDados = function() {
+  const payload = {
+    exportDate: new Date().toISOString(),
+    customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `spa-cl-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  window.notif('✅ Backup exportado!');
+};
+
+window.importarDados = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const val = JSON.parse(e.target.result);
+      const imported = val.customEntries || {};
+      let added = 0;
+      for (const [key, entries] of Object.entries(imported)) {
+        if (!Array.isArray(entries) || entries.length === 0) continue;
+        if (!customEntries[key] || customEntries[key].length === 0) {
+          customEntries[key] = entries;
+          added += entries.length;
+        } else {
+          const existingIds = new Set(customEntries[key].map(e => e.id));
+          const missing = entries.filter(e => e.id && !existingIds.has(e.id));
+          customEntries[key] = [...customEntries[key], ...missing];
+          added += missing.length;
+        }
+      }
+      if (val.customAnivs && val.customAnivs.length) {
+        const existingNames = new Set(customAnivs.map(a => a.nome));
+        val.customAnivs.filter(a => !existingNames.has(a.nome)).forEach(a => { customAnivs.push(a); });
+      }
+      window.saveData();
+      window.renderInicio();
+      const el = document.getElementById('backup-status');
+      if (el) el.textContent = `Importado em ${new Date().toLocaleString('pt-BR')} · ${added} lançamento(s) restaurado(s)`;
+      window.notif(`✅ ${added} lançamento(s) restaurado(s)!`);
+    } catch(err) {
+      window.notif('⚠️ Arquivo de backup inválido');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+};
 
 // INICIALIZAÇÃO
 window.onload = function() {
