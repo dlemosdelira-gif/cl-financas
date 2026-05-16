@@ -680,6 +680,31 @@ window.onload = function() {
     }
   } catch(e) {}
 
+  // Migração: recupera lançamentos salvos nas chaves antigas (cl_custom etc.)
+  // antes da unificação para cl_data (commit de 13/04/2026)
+  try {
+    const oldCustomRaw = localStorage.getItem('cl_custom');
+    if (oldCustomRaw) {
+      const oldEntries = JSON.parse(oldCustomRaw);
+      for (const [key, entries] of Object.entries(oldEntries)) {
+        if (!Array.isArray(entries) || entries.length === 0) continue;
+        if (!customEntries[key] || customEntries[key].length === 0) {
+          customEntries[key] = entries;
+        } else {
+          // Une por id: adiciona entradas antigas ausentes no dado atual
+          const existingIds = new Set(customEntries[key].map(e => e.id));
+          const missing = entries.filter(e => e.id && !existingIds.has(e.id));
+          customEntries[key] = [...customEntries[key], ...missing];
+        }
+      }
+      const oldAnivs = localStorage.getItem('cl_anivs');
+      if (oldAnivs && !customAnivs.length) customAnivs = JSON.parse(oldAnivs) || [];
+      // Remove chaves antigas para não re-migrar na próxima abertura
+      ['cl_custom','cl_anivs','cl_custo','cl_fixos','cl_sessoes'].forEach(k => localStorage.removeItem(k));
+      try { localStorage.setItem('cl_data', JSON.stringify({ customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes })); } catch(e) {}
+    }
+  } catch(e) {}
+
   // Renderiza com os dados disponíveis
   window.renderInicio();
 
@@ -691,15 +716,31 @@ window.onload = function() {
       const db = firebase.database();
       window._db = db; // expose so saveData can write
       db.ref('data').on('value', (snapshot) => {
-        if (!snapshot.exists()) return;
-        const val = snapshot.val();
-        customEntries  = val.customEntries  || customEntries;
+        const fbEntries = snapshot.exists() ? (snapshot.val().customEntries || {}) : {};
+        const val       = snapshot.exists() ? snapshot.val() : {};
+
+        // Merge seguro: une Firebase com local sem sobrescrever entradas ausentes no Firebase
+        const merged = { ...fbEntries };
+        for (const [key, entries] of Object.entries(customEntries)) {
+          if (!Array.isArray(entries) || entries.length === 0) continue;
+          if (!merged[key] || merged[key].length === 0) {
+            merged[key] = entries;
+          } else {
+            const fbIds = new Set(merged[key].map(e => e.id));
+            const localOnly = entries.filter(e => e.id && !fbIds.has(e.id));
+            if (localOnly.length) merged[key] = [...merged[key], ...localOnly];
+          }
+        }
+        customEntries  = merged;
         customAnivs    = val.customAnivs    || customAnivs;
         if (val.custoItens)    custoItens    = val.custoItens;
         if (val.fixosItens)    fixosItens    = val.fixosItens;
         ultimasSessoes = val.ultimasSessoes || ultimasSessoes;
-        // Persiste localmente a versão mais recente do Firebase
-        localStorage.setItem('cl_data', JSON.stringify({ customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes }));
+
+        // Persiste localmente e no Firebase o resultado merged
+        try { localStorage.setItem('cl_data', JSON.stringify({ customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes })); } catch(e) {}
+        try { db.ref('data').set({ customEntries, customAnivs, custoItens, fixosItens, ultimasSessoes }); } catch(e) {}
+
         // Re-renderiza a tela ativa
         const activePage = document.querySelector('.page.active').id;
         if      (activePage === 'page-inicio')       window.renderInicio();
