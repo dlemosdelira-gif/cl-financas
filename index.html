@@ -245,11 +245,20 @@ input:focus, select:focus { border-color: var(--accent); }
     <div class="card-title">🔒 Backup de Dados</div>
     <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Exporte um backup completo dos seus lançamentos. Importe para restaurar dados perdidos.</p>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <button class="btn btn-accent" onclick="exportarDados()" style="width:100%;padding:11px;font-size:14px">⬇️ Exportar backup (JSON)</button>
-      <label style="display:block;width:100%;padding:11px;font-size:14px;text-align:center;cursor:pointer;border-radius:var(--radius);border:2px solid var(--border);background:white;color:var(--text2);font-weight:700;box-sizing:border-box">
-        ⬆️ Importar backup (JSON)
-        <input type="file" accept=".json" style="display:none" onchange="importarDados(event)">
-      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="btn btn-accent" onclick="exportarDados()" style="padding:11px;font-size:13px">⬇️ JSON</button>
+        <button class="btn btn-accent" onclick="exportarCSV()" style="padding:11px;font-size:13px;background:var(--green)">⬇️ CSV (planilha)</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <label style="display:block;padding:11px;font-size:13px;text-align:center;cursor:pointer;border-radius:var(--radius);border:2px solid var(--border);background:white;color:var(--text2);font-weight:700;box-sizing:border-box">
+          ⬆️ JSON
+          <input type="file" accept=".json" style="display:none" onchange="importarDados(event)">
+        </label>
+        <label style="display:block;padding:11px;font-size:13px;text-align:center;cursor:pointer;border-radius:var(--radius);border:2px solid var(--green);background:white;color:var(--green);font-weight:700;box-sizing:border-box">
+          ⬆️ CSV (planilha)
+          <input type="file" accept=".csv,.txt" style="display:none" onchange="importarCSV(event)">
+        </label>
+      </div>
       <div id="backup-status" style="font-size:12px;color:var(--muted);text-align:center;min-height:18px"></div>
     </div>
   </div>
@@ -727,6 +736,117 @@ window.importarDados = function(event) {
     }
   };
   reader.readAsText(file);
+  event.target.value = '';
+};
+
+// helper interno: parseia uma linha CSV respeitando aspas
+function _csvLine(line, sep) {
+  const res = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+    else if (ch === sep && !inQ) { res.push(cur.trim()); cur = ''; }
+    else cur += ch;
+  }
+  res.push(cur.trim());
+  return res;
+}
+
+window.exportarCSV = function() {
+  const sep = ';';
+  const rows = [['Ano','Mes','Data','Tipo','Valor','Detalhe']];
+  for (const ano of [2024, 2025, 2026]) {
+    for (const mes of MESES) {
+      const d = window.getMesData(ano, mes);
+      for (const e of d.entradas) {
+        const data = e.isoDate
+          ? new Date(e.isoDate + 'T12:00:00').toLocaleDateString('pt-BR')
+          : (e.d.split('/').length === 2 ? `${e.d}/${ano}` : e.d);
+        rows.push([ano, MESES_FULL[mes], data, 'Receita', e.v.toFixed(2).replace('.', ','), e.det]);
+      }
+      for (const e of d.saidas) {
+        const data = e.isoDate
+          ? new Date(e.isoDate + 'T12:00:00').toLocaleDateString('pt-BR')
+          : (e.d.split('/').length === 2 ? `${e.d}/${ano}` : e.d);
+        rows.push([ano, MESES_FULL[mes], data, 'Despesa', e.v.toFixed(2).replace('.', ','), e.det]);
+      }
+    }
+  }
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(sep)).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `spa-cl-lancamentos-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  window.notif('✅ CSV exportado!');
+};
+
+window.importarCSV = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const text = e.target.result.replace(/^﻿/, '');
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) { window.notif('⚠️ CSV vazio'); return; }
+      const sep = lines[0].includes(';') ? ';' : ',';
+      const headers = _csvLine(lines[0], sep).map(h => h.toLowerCase());
+      const fi = {
+        ano:   headers.findIndex(h => h.includes('ano')),
+        data:  headers.findIndex(h => h.includes('data')),
+        tipo:  headers.findIndex(h => h.includes('tipo')),
+        valor: headers.findIndex(h => h.includes('valor')),
+        det:   headers.findIndex(h => h.includes('detalhe') || h.includes('det')),
+      };
+      if (Object.values(fi).some(i => i < 0)) { window.notif('⚠️ Cabeçalho CSV inválido'); return; }
+
+      // Captura snapshot de tudo que já existe (base + custom) para deduplicar
+      const snap = {};
+      for (const ano of [2024, 2025, 2026]) {
+        for (const mes of MESES) {
+          const key = `${ano}_${mes}`;
+          const d = window.getMesData(ano, mes);
+          snap[key] = [
+            ...d.entradas.map(e => `${e.d}|${Math.abs(e.v).toFixed(2)}|${e.det}`),
+            ...d.saidas.map(e => `${e.d}|${Math.abs(e.v).toFixed(2)}|${e.det}`),
+          ];
+        }
+      }
+
+      let added = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const c = _csvLine(lines[i], sep);
+        const ano = parseInt(c[fi.ano]);
+        const dataRaw = c[fi.data]?.trim();
+        const tipoRaw = c[fi.tipo]?.trim().toLowerCase();
+        const valor = parseFloat((c[fi.valor] || '').replace(',', '.'));
+        const det = c[fi.det]?.trim().toUpperCase();
+        if (!ano || !dataRaw || !tipoRaw || isNaN(valor) || !det) continue;
+        const parts = dataRaw.split('/');
+        if (parts.length < 2) continue;
+        const mes = MESES[parseInt(parts[1]) - 1];
+        if (!mes) continue;
+        const d = `${parts[0].padStart(2,'0')}/${parts[1].padStart(2,'0')}`;
+        const isoDate = `${parts[2] || ano}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+        const key = `${ano}_${mes}`;
+        const sig = `${d}|${Math.abs(valor).toFixed(2)}|${det}`;
+        if ((snap[key] || []).includes(sig)) continue;
+        if (!customEntries[key]) customEntries[key] = [];
+        const isRec = tipoRaw.includes('receita') || tipoRaw === 'rec';
+        customEntries[key].push({ id: Date.now() + added, tipo: isRec ? 'rec' : 'desp', d, isoDate, valor: Math.abs(valor), det });
+        // Adiciona ao snapshot local para evitar duplicata dentro do mesmo arquivo
+        if (!snap[key]) snap[key] = [];
+        snap[key].push(sig);
+        added++;
+      }
+      window.saveData(); window.renderInicio();
+      const el = document.getElementById('backup-status');
+      if (el) el.textContent = `CSV importado em ${new Date().toLocaleString('pt-BR')} · ${added} lançamento(s) adicionado(s)`;
+      window.notif(`✅ ${added} lançamento(s) importado(s) do CSV!`);
+    } catch(err) { console.error(err); window.notif('⚠️ Erro ao processar CSV'); }
+  };
+  reader.readAsText(file, 'UTF-8');
   event.target.value = '';
 };
 
